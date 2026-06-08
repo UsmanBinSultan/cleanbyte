@@ -7,6 +7,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:sift/app/ai_categories/ai_categories_controller.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
+import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/models/photo_category.dart';
 
@@ -15,18 +16,27 @@ class AiCategoriesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments;
+    final fromNav = args is Map && args['fromNav'] == true;
+
     return GetBuilder<AiCategoriesController>(
       builder: (controller) {
         return Scaffold(
           backgroundColor: AppColors.pageBackground(context),
           body: SafeArea(
+            bottom: false,
             child: Column(
               children: [
-                _Header(title: 'ai_categories'.tr),
+                _Header(
+                  title: 'ai_categories'.tr,
+                  trailing: _ScanAgainAction(controller: controller),
+                  showBack: !fromNav,
+                ),
                 Expanded(child: _CategoriesBody(controller: controller)),
               ],
             ),
           ),
+          bottomNavigationBar: const SiftBottomNavBar(activeIndex: 1),
         );
       },
     );
@@ -58,25 +68,25 @@ class _CategoriesBody extends StatelessWidget {
       );
     }
 
-    if (controller.errorMessage != null && controller.photos.isEmpty) {
-      return _CenteredState(
-        icon: LucideIcons.sparkles,
-        title: 'Categories unavailable',
-        body: controller.errorMessage!,
-        primaryLabel: 'Scan Again',
-        onPrimary: () => controller.scanLibrary(force: true),
-      );
-    }
+    // if (controller.errorMessage != null && controller.photos.isEmpty) {
+    //   return _CenteredState(
+    //     icon: LucideIcons.sparkles,
+    //     title: 'Categories unavailable',
+    //     body: controller.errorMessage!,
+    //     primaryLabel: 'Scan Again',
+    //     onPrimary: () => controller.scanLibrary(force: true),
+    //   );
+    // }
 
-    if (controller.photos.isEmpty) {
-      return _CenteredState(
-        icon: LucideIcons.imageOff,
-        title: 'No photos found',
-        body: 'Photos from your library will appear here after scanning.',
-        primaryLabel: 'Scan Again',
-        onPrimary: () => controller.scanLibrary(force: true),
-      );
-    }
+    // if (controller.photos.isEmpty) {
+    //   return _CenteredState(
+    //     icon: LucideIcons.imageOff,
+    //     title: 'No photos found',
+    //     body: 'Photos from your library will appear here after scanning.',
+    //     primaryLabel: 'Scan Again',
+    //     onPrimary: () => controller.scanLibrary(force: true),
+    //   );
+    // }
 
     return RefreshIndicator(
       color: const Color(0xFF18D0B8),
@@ -682,12 +692,43 @@ class _CenteredState extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title});
+  const _Header({required this.title, this.trailing, this.showBack = true});
 
   final String title;
+  final Widget? trailing;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
-    return SiftTopAppBar(title: title);
+    return SiftTopAppBar(title: title, trailing: trailing, showBack: showBack);
+  }
+}
+
+class _ScanAgainAction extends StatelessWidget {
+  const _ScanAgainAction({required this.controller});
+
+  final AiCategoriesController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final light = Theme.of(context).brightness == Brightness.light;
+    final accent = light ? const Color(0xFF0E8F80) : const Color(0xFF18D0B8);
+    final scanning = controller.isScanning;
+
+    return TextButton.icon(
+      onPressed: scanning ? null : () => controller.scanLibrary(force: true),
+      icon: scanning
+          ? SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+            )
+          : const Icon(LucideIcons.refreshCw, size: 16),
+      label: Text(scanning ? 'Scanning' : 'Scan Again'),
+      style: TextButton.styleFrom(
+        foregroundColor: accent,
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+    );
   }
 }

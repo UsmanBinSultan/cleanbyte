@@ -6,9 +6,12 @@ import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/settings/settings_binding.dart';
 import 'package:sift/app/settings/settings_controller.dart';
 import 'package:sift/app/translations/app_translations.dart';
+import 'package:sift/services/recycle_bin_service.dart';
 
 void main() {
   SettingsBinding().dependencies();
+  // Loads the saved index and purges anything older than 30 days on startup.
+  Get.put(RecycleBinService(), permanent: true);
   runApp(const CleanByteApp());
 }
 

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sift/services/recycle_bin_service.dart';
 
 class WhatsappCleanerController extends GetxController {
   static WhatsappCleanerController instance = Get.find();
@@ -322,6 +323,8 @@ class WhatsappMediaController extends GetxController {
       try {
         final file = File(path);
         if (await file.exists()) {
+          // Soft-delete media into the recycle bin (no-op for non-media).
+          await Get.find<RecycleBinService>().backupFile(path);
           await file.delete();
           deleted++;
           for (final item in items) {

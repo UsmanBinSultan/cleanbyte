@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sift/services/recycle_bin_service.dart';
 
 class LargeFileItem {
   const LargeFileItem({
@@ -113,6 +114,9 @@ class LargeFilesController extends GetxController {
       try {
         final file = File(path);
         if (await file.exists()) {
+          // Soft-delete photos and videos into the recycle bin; other file
+          // types (apk, zip, docs) are skipped and deleted as before.
+          await Get.find<RecycleBinService>().backupFile(path);
           await file.delete();
           deleted++;
         }

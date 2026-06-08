@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
+import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/whatsapp_cleaner/whatsapp_cleaner_controller.dart';
 
@@ -42,14 +43,21 @@ class WhatsappCleanerView extends StatelessWidget {
       ),
     ];
 
+    final args = Get.arguments;
+    final fromNav = args is Map && args['fromNav'] == true;
+
     return GetBuilder<WhatsappCleanerController>(
       builder: (controller) {
         return Scaffold(
           backgroundColor: AppColors.pageBackground(context),
+          bottomNavigationBar: fromNav
+              ? const SiftBottomNavBar(activeIndex: 2)
+              : null,
           body: SafeArea(
+            bottom: !fromNav,
             child: Column(
               children: [
-                _Header(title: 'wa cleaner'.tr),
+                _Header(title: 'wa cleaner'.tr, showBack: !fromNav),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -918,12 +926,13 @@ String _formatDate(DateTime date) {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title});
+  const _Header({required this.title, this.showBack = true});
 
   final String title;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
-    return SiftTopAppBar(title: title);
+    return SiftTopAppBar(title: title, showBack: showBack);
   }
 }

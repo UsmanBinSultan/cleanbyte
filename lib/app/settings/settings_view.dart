@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/routes/app_routes.dart';
 import 'package:sift/app/settings/settings_controller.dart';
+import 'package:sift/services/recycle_bin_service.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -50,7 +51,7 @@ class SettingsView extends StatelessWidget {
                   children: [
                     _SettingsSwitchRow(
                       icon: LucideIcons.shieldCheck,
-                      iconColor: const Color(0xFF34C759),
+                      iconColor: const Color(0xFF18D0B8),
                       titleKey: 'on device only'.tr,
                       subtitleKey: 'on device body'.tr,
                       enabled: controller.onDeviceOnly,
@@ -76,6 +77,23 @@ class SettingsView extends StatelessWidget {
                     height: 1.25,
                     fontWeight: FontWeight.w700,
                   ),
+                ),
+                const SizedBox(height: 30),
+                _SectionLabel(label: 'storage section'.tr, color: labelColor),
+                const SizedBox(height: 8),
+                _SettingsGroup(
+                  children: [
+                    GetBuilder<RecycleBinService>(
+                      builder: (bin) => _SettingsActionRow(
+                        icon: LucideIcons.trash2,
+                        iconColor: const Color(0xFFFF7A5F),
+                        titleKey: 'recycle bin',
+                        subtitleKey: 'recycle bin subtitle',
+                        valueText: '${bin.count}',
+                        onTap: () => Get.toNamed(AppRoutes.recycleBin),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 30),
                 _SectionLabel(label: 'preferences'.tr, color: labelColor),
@@ -112,28 +130,28 @@ class SettingsView extends StatelessWidget {
     await controller.openGallery();
     await controller.loadPhotoCollections();
     // await Get.bottomSheet<void>(
-      // _SettingsPickerSheet(
-      //   title: 'photo collections'.tr,
-      //   children: controller.photoCollections.isEmpty
-      //       ? [
-      //           Padding(
-      //             padding: const EdgeInsets.all(18),
-      //             child: Text('no photo collections'.tr),
-      //           ),
-      //         ]
-      //       : [
-      //           for (final collection in controller.photoCollections)
-      //             _SettingsPickerTile(
-      //               title: collection.name,
-      //               subtitle: 'photos_count'.trParams({
-      //                 'count': collection.count.toString(),
-      //               }),
-      //               selected: false,
-      //               onTap: Get.back<void>,
-      //             ),
-      //         ],
-      // ),
-      // backgroundColor: Colors.transparent,
+    // _SettingsPickerSheet(
+    //   title: 'photo collections'.tr,
+    //   children: controller.photoCollections.isEmpty
+    //       ? [
+    //           Padding(
+    //             padding: const EdgeInsets.all(18),
+    //             child: Text('no photo collections'.tr),
+    //           ),
+    //         ]
+    //       : [
+    //           for (final collection in controller.photoCollections)
+    //             _SettingsPickerTile(
+    //               title: collection.name,
+    //               subtitle: 'photos_count'.trParams({
+    //                 'count': collection.count.toString(),
+    //               }),
+    //               selected: false,
+    //               onTap: Get.back<void>,
+    //             ),
+    //         ],
+    // ),
+    // backgroundColor: Colors.transparent,
     // );
   }
 

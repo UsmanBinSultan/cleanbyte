@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/components/app_colors.dart';
+import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/initial_scan/initial_scan_controller.dart';
 import 'package:sift/app/routes/app_routes.dart';
 
@@ -24,10 +25,11 @@ class InitialScanView extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 18, 28, 30),
+                  padding: const EdgeInsets.fromLTRB(28, 8, 28, 8),
                   child: Column(
                     children: [
                       // const _TopHandle(),
+                      const SiftTopAppBar(title: ''),
                       const Spacer(flex: 2),
                       _ScanOrb(controller: controller),
                       const SizedBox(height: 38),
@@ -306,9 +308,7 @@ class _ProgressFooter extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          child: Text(
-            controller.isComplete ? 'Review cleanup' : 'Skip and clean later',
-          ),
+          child: Text(controller.isComplete ? '' : 'Skip and clean later'),
         ),
       ],
     );

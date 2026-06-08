@@ -4,6 +4,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:sift/models/blur_result.dart';
 import 'package:sift/services/blur_cache.dart';
 import 'package:sift/services/blur_detector.dart';
+import 'package:sift/services/recycle_bin_service.dart';
 
 enum MediaCleanupMode {
   photos,
@@ -40,7 +41,7 @@ enum MediaCleanupMode {
     if (isLargeFiles) {
       return 'Large Files';
     }
-    return 'similar photos'.tr;
+    return 'Photos'.tr;
   }
 
   String get emptyTitle {
@@ -310,8 +311,15 @@ class SimilarPhotosController extends GetxController {
     update();
 
     final byteSize = await _assetSize(asset);
+    // Back the asset up first so it can be restored from the recycle bin, then
+    // drop the backup if the OS did not actually delete it.
+    final bin = Get.find<RecycleBinService>();
+    await bin.backupAssets([asset]);
     final deletedIds = await PhotoManager.editor.deleteWithIds([asset.id]);
     final deleted = deletedIds.contains(asset.id);
+    if (!deleted) {
+      await bin.discardBackups([asset.id]);
+    }
     if (deleted) {
       assets = assets
           .where((candidate) => candidate.id != asset.id)
@@ -385,10 +393,20 @@ class SimilarPhotosController extends GetxController {
     isDeleting = true;
     update();
 
-    final deletedIds = await PhotoManager.editor.deleteWithIds(
-      selectedIds.toList(growable: false),
-    );
+    // Back up the selected assets before deletion so they land in the recycle
+    // bin, then discard backups for any the OS did not actually delete.
+    final bin = Get.find<RecycleBinService>();
+    final selectedAssets = assets
+        .where((asset) => selectedIds.contains(asset.id))
+        .toList(growable: false);
+    await bin.backupAssets(selectedAssets);
+
+    final requestedIds = selectedIds.toList(growable: false);
+    final deletedIds = await PhotoManager.editor.deleteWithIds(requestedIds);
     final deletedSet = deletedIds.toSet();
+    await bin.discardBackups(
+      requestedIds.where((id) => !deletedSet.contains(id)),
+    );
     assets = assets.where((asset) => !deletedSet.contains(asset.id)).toList();
     assetByteSizes.removeWhere((id, _) => deletedSet.contains(id));
     duplicateGroupCounts.removeWhere((id, _) => deletedSet.contains(id));

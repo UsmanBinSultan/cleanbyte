@@ -131,7 +131,25 @@ class AppTranslations extends Translations {
         'Restore RevenueCat purchases':'Restore RevenueCat purchases',
         'RECENT RECEIPTS':'RECENT RECEIPTS',
         'That\'s  per week': 'That\'s  per week',
-        
+        'storage section': 'STORAGE',
+        'recycle bin': 'Recycle Bin',
+        'recycle bin subtitle': 'Restore deleted photos & videos',
+        'recycle bin empty': 'Recycle bin is empty',
+        'recycle bin empty body':
+            'Photos and videos you delete will appear here and can be restored within 30 days.',
+        'auto delete note':
+            'Items are kept for @days days, then permanently deleted automatically.',
+        'days left': '@days days left',
+        'restore': 'Restore (@count)',
+        'delete now': 'Delete (@count)',
+        'delete now confirm':
+            'These items will be permanently deleted and cannot be restored.',
+        'empty bin': 'Empty Bin',
+        'empty bin confirm':
+            'Permanently delete everything in the recycle bin? This cannot be undone.',
+        'restored': 'Restored to your gallery.',
+        'delete': 'Delete',
+
 
 
     },
@@ -261,6 +279,23 @@ class AppTranslations extends Translations {
       'show me clean': 'أرني ما يمكن تنظيفه',
       'skip': 'تخطي',
       'cancel': 'إلغاء',
+      'storage section': 'التخزين',
+      'recycle bin': 'سلة المحذوفات',
+      'recycle bin subtitle': 'استعادة الصور والفيديوهات المحذوفة',
+      'recycle bin empty': 'سلة المحذوفات فارغة',
+      'recycle bin empty body':
+          'ستظهر هنا الصور والفيديوهات التي تحذفها ويمكن استعادتها خلال 30 يوما.',
+      'auto delete note':
+          'يتم الاحتفاظ بالعناصر لمدة @days يوما ثم تحذف نهائيا تلقائيا.',
+      'days left': 'متبقي @days يوما',
+      'restore': 'استعادة (@count)',
+      'delete now': 'حذف (@count)',
+      'delete now confirm': 'سيتم حذف هذه العناصر نهائيا ولا يمكن استعادتها.',
+      'empty bin': 'إفراغ السلة',
+      'empty bin confirm':
+          'حذف كل ما في سلة المحذوفات نهائيا؟ لا يمكن التراجع عن هذا.',
+      'restored': 'تمت الاستعادة إلى معرض الصور.',
+      'delete': 'حذف',
     },
     'es_ES': {
       'app title': 'Clean Byte',

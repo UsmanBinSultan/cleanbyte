@@ -1207,7 +1207,9 @@ class _BottomAction extends StatelessWidget {
         width: double.infinity,
         height: 52,
         child: TextButton.icon(
-          onPressed: enabled ? () => confirmAndDeleteSelected(controller) : null,
+          onPressed: enabled
+              ? () => confirmAndDeleteSelected(controller)
+              : null,
           icon: controller.isDeleting
               ? const SizedBox(
                   width: 18,
@@ -1242,41 +1244,40 @@ class _BottomAction extends StatelessWidget {
       ),
     );
   }
-
 }
 
-Future<void> confirmAndDeleteSelected(SimilarPhotosController controller) async {
+Future<void> confirmAndDeleteSelected(
+  SimilarPhotosController controller,
+) async {
   final mediaName = _mediaName(controller.mode);
   final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        backgroundColor: const Color(0xFF111929),
-        title: const Text(
-          'Delete selected?',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
-        ),
-        content: Text(
-          'This will ask the device photo library to delete ${controller.selectedIds.length} $mediaName.',
-          style: const TextStyle(color: Color(0xFFC2CAD6)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFFF7A5F),
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
+    AlertDialog(
+      backgroundColor: const Color(0xFF111929),
+      title: const Text(
+        'Delete selected?',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
       ),
-    );
+      content: Text(
+        'This will ask the device photo library to delete ${controller.selectedIds.length} $mediaName.',
+        style: const TextStyle(color: Color(0xFFC2CAD6)),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Get.back(result: true),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFFF7A5F)),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed != true) {
-      return;
-    }
+  if (confirmed != true) {
+    return;
+  }
 
   final deleted = await controller.deleteSelected();
   Get.snackbar(

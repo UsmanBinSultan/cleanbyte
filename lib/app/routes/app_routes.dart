@@ -24,4 +24,5 @@ class AppRoutes {
   static const photoCompressor = '/photo-compressor';
   static const batteryManager = '/battery-manager';
   static const subscription = '/subscription';
+  static const recycleBin = '/recycle-bin';
 }

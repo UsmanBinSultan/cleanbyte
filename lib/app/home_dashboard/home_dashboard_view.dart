@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/home_dashboard/home_dashboard_controller.dart';
 import 'package:sift/app/routes/app_routes.dart';
 import 'package:sift/app/settings/settings_view.dart';
@@ -36,7 +37,9 @@ class HomeDashboardView extends StatelessWidget {
                     ),
                     Align(
                       alignment: Alignment.bottomCenter,
-                      child: _BottomNavBar(controller: controller),
+                      child: SiftBottomNavBar(
+                        activeIndex: controller.selectedIndex,
+                      ),
                     ),
                   ],
                 ),
@@ -147,6 +150,7 @@ class _StorageRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final light = Theme.of(context).brightness == Brightness.light;
     final storage = controller.storage;
     final usedText = _formatStorageBytes(storage.usedBytes);
     final totalText = _formatStorageBytes(storage.totalBytes);
@@ -171,8 +175,8 @@ class _StorageRing extends StatelessWidget {
                   children: [
                     Text(
                       usedText.split(' ').first,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: light ? const Color(0xFF17201B) : Colors.white,
                         fontSize: 36,
                         height: 0.9,
                         fontWeight: FontWeight.w900,
@@ -182,8 +186,8 @@ class _StorageRing extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 2, bottom: 5),
                       child: Text(
                         usedText.split(' ').last,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: light ? const Color(0xFF17201B) : Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
                         ),
@@ -292,9 +296,6 @@ class _FreeUpBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final light = Theme.of(context).brightness == Brightness.light;
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final freeUpText = HomeDashboardController.formatBytes(
-      controller.reclaimableBytes,
-    );
     return InkWell(
       onTap: () async {
         await Get.toNamed(AppRoutes.initialScan);
@@ -324,22 +325,22 @@ class _FreeUpBanner extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'you can free up'.tr,
+                'you can free up some space'.tr,
                 style: TextStyle(
                   color: light ? const Color(0xFF17201B) : Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              Text(
-                freeUpText,
-                style: const TextStyle(
-                  color: Color(0xFF18D0B8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(width: 10),
+              // Text(
+              //   freeUpText,
+              //   style: const TextStyle(
+              //     color: Color(0xFF18D0B8),
+              //     fontSize: 14,
+              //     fontWeight: FontWeight.w900,
+              //   ),
+              // ),
+              // const SizedBox(width: 10),
               Icon(
                 rtl ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
                 color: Color(0xFF18D0B8),
@@ -366,7 +367,7 @@ class _QuickCleanCard extends StatelessWidget {
       controller.quickCleanReadyBytes,
     );
     return InkWell(
-      onTap: controller.quickClean,
+      onTap: controller.isQuickCleaning ? null : controller.quickClean,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         height: 74,
@@ -396,13 +397,22 @@ class _QuickCleanCard extends StatelessWidget {
                 color: const Color(0xFF1DC0AE),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                controller.isQuickCleaning
-                    ? LucideIcons.loader2
-                    : LucideIcons.activity,
-                color: Colors.white,
-                size: 21,
-              ),
+              child: controller.isQuickCleaning
+                  ? const Center(
+                      child: SizedBox(
+                        width: 19,
+                        height: 19,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      LucideIcons.activity,
+                      color: Colors.white,
+                      size: 21,
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -411,7 +421,7 @@ class _QuickCleanCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'quick clean'.tr,
+                    'cache clean'.tr,
                     style: TextStyle(
                       color: light ? const Color(0xFF17201B) : Colors.white,
                       fontSize: 14,
@@ -689,108 +699,6 @@ class _CategoryCard extends StatelessWidget {
                 color: Color(0xFF8B94A3),
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar({required this.controller});
-
-  final HomeDashboardController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? Colors.white
-            : const Color(0xFF08101E),
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).brightness == Brightness.light
-                ? const Color(0xFFE7E2D6)
-                : const Color(0xFF121C2C),
-          ),
-        ),
-        boxShadow: Theme.of(context).brightness == Brightness.light
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 22,
-                  offset: const Offset(0, -8),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        children: [
-          _NavItem(
-            label: 'home'.tr,
-            icon: LucideIcons.home,
-            active: controller.selectedIndex == 0,
-            onTap: () => controller.changeTab(0),
-          ),
-          _NavItem(
-            label: 'Image Categories'.tr,
-            icon: LucideIcons.sparkles,
-            active: false,
-            onTap: () => Get.toNamed(AppRoutes.aiCategories),
-          ),
-          _NavItem(
-            label: 'wa clean'.tr,
-            icon: LucideIcons.messageCircle,
-            active: false,
-            onTap: () => Get.toNamed(AppRoutes.whatsappCleaner),
-          ),
-          _NavItem(
-            label: 'settings'.tr,
-            icon: LucideIcons.settings,
-            active: controller.selectedIndex == 3,
-            onTap: () => controller.changeTab(3),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.label,
-    required this.icon,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? const Color(0xFF18D0B8) : const Color(0xFF697385);
-
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
               ),
             ),
           ],

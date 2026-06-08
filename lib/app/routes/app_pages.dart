@@ -29,6 +29,8 @@ import 'package:sift/app/problem_framing/problem_framing_binding.dart';
 import 'package:sift/app/problem_framing/problem_framing_view.dart';
 import 'package:sift/app/process_manager/process_manager_binding.dart';
 import 'package:sift/app/process_manager/process_manager_view.dart';
+import 'package:sift/app/recycle_bin/recycle_bin_binding.dart';
+import 'package:sift/app/recycle_bin/recycle_bin_view.dart';
 import 'package:sift/app/routes/app_routes.dart';
 import 'package:sift/app/similar_photos/similar_photos_binding.dart';
 import 'package:sift/app/similar_photos/similar_photos_controller.dart';
@@ -164,6 +166,11 @@ class AppPages {
       name: AppRoutes.subscription,
       page: () => const SubscriptionView(),
       binding: SubscriptionBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.recycleBin,
+      page: () => const RecycleBinView(),
+      binding: RecycleBinBinding(),
     ),
   ];
 }

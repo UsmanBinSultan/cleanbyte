@@ -138,11 +138,11 @@ class HomeDashboardController extends GetxController {
             '${media.photos.count} ${(media.photos.count == 1 ? 'photo' : 'photos').tr}  ${formatBytes(media.photos.bytes)}',
       ),
     });
-    _refreshCleanupMetrics(media, largeFiles, whatsapp);
+    _refreshCleanupMetrics(media, largeFiles);
 
     largeFiles = await _loadLargeFileMetric();
     _setMetrics({largeFilesKey: largeFiles});
-    _refreshCleanupMetrics(media, largeFiles, whatsapp);
+    _refreshCleanupMetrics(media, largeFiles);
 
     whatsapp = await _loadWhatsappMetric();
     _setMetrics({
@@ -152,7 +152,6 @@ class HomeDashboardController extends GetxController {
         labelOverride: '${'whatsapp'.tr}  ${formatBytes(whatsapp.bytes)}',
       ),
     });
-    _refreshCleanupMetrics(media, largeFiles, whatsapp);
 
     final apps = await _loadAppsMetric();
     _setMetrics({
@@ -233,21 +232,19 @@ class HomeDashboardController extends GetxController {
   void _refreshCleanupMetrics(
     _MediaDashboardMetrics media,
     DashboardMetric largeFiles,
-    DashboardMetric whatsapp,
   ) {
+    // WhatsApp media is excluded here: it has its own dedicated cleaner card
+    // and is not part of the on-device library scan this metric feeds into
+    // (the "free up" banner and "ai cleanup" card both open the initial scan).
     final duplicateBytes = media.duplicateReclaimableBytes;
     reclaimableBytes =
-        duplicateBytes +
-        media.screenshots.bytes +
-        largeFiles.bytes +
-        whatsapp.bytes;
+        duplicateBytes + media.screenshots.bytes + largeFiles.bytes;
     _setMetrics({
       aiCleanupKey: DashboardMetric(
         count:
             media.duplicates.count +
             media.screenshots.count +
-            largeFiles.count +
-            whatsapp.count,
+            largeFiles.count,
         bytes: reclaimableBytes,
         labelOverride: '${formatBytes(reclaimableBytes)} ${'junk'.tr}',
       ),
@@ -261,17 +258,19 @@ class HomeDashboardController extends GetxController {
     isQuickCleaning = true;
     update();
 
-    final before = await _directoryBytes(await _quickCleanDirectories());
-    for (final directory in await _quickCleanDirectories()) {
-      await _deleteDirectoryContents(directory);
+    try {
+      final before = await _directoryBytes(await _quickCleanDirectories());
+      for (final directory in await _quickCleanDirectories()) {
+        await _deleteDirectoryContents(directory);
+      }
+      final after = await _directoryBytes(await _quickCleanDirectories());
+      lastQuickCleanBytes = math.max(0, before - after);
+      quickCleanReadyBytes = after;
+      await refreshSummary();
+    } finally {
+      isQuickCleaning = false;
+      update();
     }
-    final after = await _directoryBytes(await _quickCleanDirectories());
-    lastQuickCleanBytes = math.max(0, before - after);
-    quickCleanReadyBytes = after;
-
-    isQuickCleaning = false;
-    update();
-    await refreshSummary();
 
     Get.snackbar(
       'Quick Clean complete'.tr,
