@@ -101,12 +101,12 @@ class _HomeHeader extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                'Storage'.tr,
+                'Clean Byte'.tr,
                 style: TextStyle(
                   color: Theme.of(context).brightness == Brightness.light
                       ? const Color(0xFF17201B)
                       : Colors.white,
-                  fontSize: 26,
+                  fontSize: 22,
                   height: 1,
                   fontWeight: FontWeight.w900,
                 ),
@@ -202,7 +202,7 @@ class _StorageRing extends StatelessWidget {
                       : 'used of'.trParams({'total': totalText}),
                   style: const TextStyle(
                     color: Color(0xFF8A93A2),
-                    fontSize: 10,
+                    fontSize: 8,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
