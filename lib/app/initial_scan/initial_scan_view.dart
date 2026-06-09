@@ -25,7 +25,7 @@ class InitialScanView extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 8, 28, 8),
+                  padding: const EdgeInsets.fromLTRB(8, 8, 28, 8),
                   child: Column(
                     children: [
                       // const _TopHandle(),
