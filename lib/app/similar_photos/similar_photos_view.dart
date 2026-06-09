@@ -5,7 +5,10 @@ import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:sift/app/components/app_colors.dart';
+import 'package:sift/app/components/asset_thumbnail.dart';
+import 'package:sift/app/components/centered_state_view.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
+import 'package:sift/app/components/selection_check_mark.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/similar_photos/similar_photos_controller.dart';
 import 'package:sift/core/utils/formatters.dart';
@@ -98,16 +101,18 @@ class _MediaBody extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final asset = controller.assets[index];
-                return _MediaTile(
-                  asset: asset,
-                  isVideo: controller.mode.isVideos,
-                  byteSize: controller.assetByteSizes[asset.id],
-                  detailLabel: controller.assetDetailLabel(asset),
-                  selected: controller.isSelected(asset),
-                  keep: controller.isDuplicateKeeper(asset),
-                  onTap: controller.mode == MediaCleanupMode.photos
-                      ? () => controller.openAssetReview(asset)
-                      : () => controller.toggleAsset(asset),
+                return RepaintBoundary(
+                  child: _MediaTile(
+                    asset: asset,
+                    isVideo: controller.mode.isVideos,
+                    byteSize: controller.assetByteSizes[asset.id],
+                    detailLabel: controller.assetDetailLabel(asset),
+                    selected: controller.isSelected(asset),
+                    keep: controller.isDuplicateKeeper(asset),
+                    onTap: controller.mode == MediaCleanupMode.photos
+                        ? () => controller.openAssetReview(asset)
+                        : () => controller.toggleAsset(asset),
+                  ),
                 );
               },
             ),
@@ -417,18 +422,44 @@ class _SwipePhotoCard extends StatelessWidget {
   }
 }
 
-class _ReviewPhoto extends StatelessWidget {
+class _ReviewPhoto extends StatefulWidget {
   const _ReviewPhoto({required this.asset});
 
   final AssetEntity asset;
 
   @override
+  State<_ReviewPhoto> createState() => _ReviewPhotoState();
+}
+
+class _ReviewPhotoState extends State<_ReviewPhoto> {
+  late Future<Uint8List?> _photo;
+
+  @override
+  void initState() {
+    super.initState();
+    _photo = _load();
+  }
+
+  @override
+  void didUpdateWidget(_ReviewPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The swipe pane rebuilds on every drag delta; only reload when the
+    // reviewed asset actually changes so the full-size image isn't decoded
+    // again on each frame.
+    if (oldWidget.asset.id != widget.asset.id) {
+      _photo = _load();
+    }
+  }
+
+  Future<Uint8List?> _load() => widget.asset.thumbnailDataWithSize(
+    const ThumbnailSize(900, 1200),
+    quality: 92,
+  );
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Uint8List?>(
-      future: asset.thumbnailDataWithSize(
-        const ThumbnailSize(900, 1200),
-        quality: 92,
-      ),
+      future: _photo,
       builder: (context, snapshot) {
         final bytes = snapshot.data;
         if (bytes == null) {
@@ -845,7 +876,7 @@ class _AccessState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _CenteredState(
+    return CenteredStateView(
       icon: LucideIcons.image,
       title: 'Photo access needed'.tr,
       body: 'Allow access to show your ${controller.mode.mediaName} here.'.tr,
@@ -864,7 +895,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _CenteredState(
+    return CenteredStateView(
       icon: controller.mode.isVideos
           ? LucideIcons.video
           : controller.mode.isScreenshots
@@ -882,90 +913,6 @@ class _EmptyState extends StatelessWidget {
       body: controller.mode.emptyBody,
       primaryLabel: 'Refresh',
       onPrimary: controller.loadAssets,
-    );
-  }
-}
-
-class _CenteredState extends StatelessWidget {
-  const _CenteredState({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.primaryLabel,
-    required this.onPrimary,
-    this.secondaryLabel,
-    this.onSecondary,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final String primaryLabel;
-  final VoidCallback onPrimary;
-  final String? secondaryLabel;
-  final VoidCallback? onSecondary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: const Color(0xFF18D0B8), size: 42),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textMuted(context),
-                fontSize: 13,
-                height: 1.35,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 22),
-            TextButton(
-              onPressed: onPrimary,
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF18D0B8),
-                foregroundColor: const Color(0xFF062322),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              child: Text(primaryLabel),
-            ),
-            if (secondaryLabel != null && onSecondary != null) ...[
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: onSecondary,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF18D0B8),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                child: Text(secondaryLabel!),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1010,7 +957,7 @@ class _MediaTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              _Thumbnail(asset: asset),
+              AssetThumbnail(asset: asset),
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -1039,7 +986,7 @@ class _MediaTile extends StatelessWidget {
               Positioned(
                 right: 7,
                 top: 7,
-                child: _SelectionMark(selected: selected),
+                child: SelectionCheckMark(selected: selected),
               ),
               Positioned(
                 left: 7,
@@ -1060,68 +1007,6 @@ class _MediaTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.asset});
-
-  final AssetEntity asset;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List?>(
-      future: asset.thumbnailDataWithSize(
-        const ThumbnailSize(360, 460),
-        quality: 82,
-      ),
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        if (bytes == null) {
-          return const ColoredBox(
-            color: Color(0xFF172133),
-            child: Center(
-              child: Icon(
-                LucideIcons.image,
-                color: Color(0xFF687384),
-                size: 24,
-              ),
-            ),
-          );
-        }
-
-        return Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true);
-      },
-    );
-  }
-}
-
-class _SelectionMark extends StatelessWidget {
-  const _SelectionMark({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF18D0B8)
-            : Colors.black.withValues(alpha: 0.45),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: selected
-              ? const Color(0xFF18D0B8)
-              : Colors.white.withValues(alpha: 0.65),
-        ),
-      ),
-      child: selected
-          ? const Icon(LucideIcons.check, size: 14, color: Color(0xFF062322))
-          : null,
     );
   }
 }

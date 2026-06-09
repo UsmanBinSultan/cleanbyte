@@ -129,30 +129,6 @@ class SettingsView extends StatelessWidget {
   Future<void> _showPhotoCollections(SettingsController controller) async {
     await controller.openGallery();
     await controller.loadPhotoCollections();
-    // await Get.bottomSheet<void>(
-    // _SettingsPickerSheet(
-    //   title: 'photo collections'.tr,
-    //   children: controller.photoCollections.isEmpty
-    //       ? [
-    //           Padding(
-    //             padding: const EdgeInsets.all(18),
-    //             child: Text('no photo collections'.tr),
-    //           ),
-    //         ]
-    //       : [
-    //           for (final collection in controller.photoCollections)
-    //             _SettingsPickerTile(
-    //               title: collection.name,
-    //               subtitle: 'photos_count'.trParams({
-    //                 'count': collection.count.toString(),
-    //               }),
-    //               selected: false,
-    //               onTap: Get.back<void>,
-    //             ),
-    //         ],
-    // ),
-    // backgroundColor: Colors.transparent,
-    // );
   }
 
   Future<void> _showLanguagePicker(SettingsController controller) async {

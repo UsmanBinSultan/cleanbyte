@@ -114,30 +114,6 @@ class _HomeHeader extends StatelessWidget {
             ],
           ),
         ),
-        // Container(
-        //   height: 30,
-        //   padding: const EdgeInsets.symmetric(horizontal: 12),
-        //   decoration: BoxDecoration(
-        //     color: const Color(0xFF121B2C),
-        //     borderRadius: BorderRadius.circular(18),
-        //     border: Border.all(color: const Color(0xFF223047)),
-        //   ),
-        //   child: const Row(
-        //     mainAxisSize: MainAxisSize.min,
-        //     children: [
-        //       Icon(Icons.cloud_done, size: 11, color: Color(0xFF18D0B8)),
-        //       SizedBox(width: 6),
-        //       Text(
-        //         'Saved 47.2 GB',
-        //         style: TextStyle(
-        //           color: Color(0xFFC5CBD4),
-        //           fontSize: 10,
-        //           fontWeight: FontWeight.w800,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
       ],
     );
   }
@@ -332,15 +308,6 @@ class _FreeUpBanner extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              // Text(
-              //   freeUpText,
-              //   style: const TextStyle(
-              //     color: Color(0xFF18D0B8),
-              //     fontSize: 14,
-              //     fontWeight: FontWeight.w900,
-              //   ),
-              // ),
-              // const SizedBox(width: 10),
               Icon(
                 rtl ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
                 color: Color(0xFF18D0B8),

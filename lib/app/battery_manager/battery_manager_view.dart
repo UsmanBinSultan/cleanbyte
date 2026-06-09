@@ -181,8 +181,10 @@ class _BatteryGauge extends StatelessWidget {
                     Center(
                       child: Text(
                         '${battery.level}%',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.isLight(context)
+                              ? Colors.black
+                              : Colors.white,
                           fontSize: 31,
                           height: 1,
                           fontWeight: FontWeight.w900,
@@ -235,7 +237,9 @@ class _HealthText extends StatelessWidget {
             Text(
               controller.battery.health,
               style: TextStyle(
-                color: light ? const Color(0xFF0E8F80) : const Color(0xFF42E6C7),
+                color: light
+                    ? const Color(0xFF0E8F80)
+                    : const Color(0xFF42E6C7),
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
               ),

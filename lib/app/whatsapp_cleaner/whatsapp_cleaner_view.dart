@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/components/app_colors.dart';
+import 'package:sift/app/components/centered_state_view.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
+import 'package:sift/app/components/selection_check_mark.dart';
 import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/whatsapp_cleaner/whatsapp_cleaner_controller.dart';
@@ -344,7 +346,7 @@ class _MediaBody extends StatelessWidget {
     }
 
     if (!controller.hasAccess || controller.errorMessage != null) {
-      return _WaCenteredState(
+      return CenteredStateView(
         icon: LucideIcons.folderOpen,
         title: 'File access needed',
         body:
@@ -358,7 +360,7 @@ class _MediaBody extends StatelessWidget {
     }
 
     if (controller.items.isEmpty) {
-      return _WaCenteredState(
+      return CenteredStateView(
         icon: _typeIcon(controller.type),
         title: 'No ${controller.type.title.toLowerCase()} found',
         body:
@@ -396,11 +398,13 @@ class _MediaBody extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final item = controller.items[index];
-                  return _WaGridItem(
-                    item: item,
-                    type: controller.type,
-                    selected: controller.isSelected(item),
-                    onTap: () => controller.toggleItem(item),
+                  return RepaintBoundary(
+                    child: _WaGridItem(
+                      item: item,
+                      type: controller.type,
+                      selected: controller.isSelected(item),
+                      onTap: () => controller.toggleItem(item),
+                    ),
                   );
                 },
               ),
@@ -526,7 +530,7 @@ class _WaGridItem extends StatelessWidget {
               Positioned(
                 right: 7,
                 top: 7,
-                child: _WaSelectionMark(selected: selected),
+                child: SelectionCheckMark(selected: selected),
               ),
               Positioned(
                 left: 7,
@@ -624,120 +628,7 @@ class _WaListItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            _WaSelectionMark(selected: selected),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WaSelectionMark extends StatelessWidget {
-  const _WaSelectionMark({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFF18D0B8)
-            : Colors.black.withValues(alpha: 0.45),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: selected
-              ? const Color(0xFF18D0B8)
-              : Colors.white.withValues(alpha: 0.65),
-        ),
-      ),
-      child: selected
-          ? const Icon(LucideIcons.check, size: 14, color: Color(0xFF062322))
-          : null,
-    );
-  }
-}
-
-class _WaCenteredState extends StatelessWidget {
-  const _WaCenteredState({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.primaryLabel,
-    required this.onPrimary,
-    this.secondaryLabel,
-    this.onSecondary,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final String primaryLabel;
-  final VoidCallback onPrimary;
-  final String? secondaryLabel;
-  final VoidCallback? onSecondary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: const Color(0xFF18D0B8), size: 42),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textMuted(context),
-                fontSize: 13,
-                height: 1.35,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 22),
-            TextButton(
-              onPressed: onPrimary,
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF18D0B8),
-                foregroundColor: const Color(0xFF062322),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              child: Text(primaryLabel),
-            ),
-            if (secondaryLabel != null && onSecondary != null) ...[
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: onSecondary,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF18D0B8),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                child: Text(secondaryLabel!),
-              ),
-            ],
+            SelectionCheckMark(selected: selected),
           ],
         ),
       ),

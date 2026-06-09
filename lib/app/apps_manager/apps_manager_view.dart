@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/apps_manager/apps_manager_controller.dart';
 import 'package:sift/app/components/app_colors.dart';
+import 'package:sift/app/components/centered_state_view.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/core/utils/formatters.dart';
@@ -42,22 +43,22 @@ class _AppsBody extends StatelessWidget {
     }
 
     if (controller.errorMessage != null) {
-      return _CenteredState(
+      return CenteredStateView(
         icon: LucideIcons.smartphone,
         title: 'Apps unavailable',
         body: controller.errorMessage!,
-        label: 'Try Again',
-        onPressed: controller.loadApps,
+        primaryLabel: 'Try Again',
+        onPrimary: controller.loadApps,
       );
     }
 
     if (controller.apps.isEmpty) {
-      return _CenteredState(
+      return CenteredStateView(
         icon: LucideIcons.packageSearch,
         title: 'No apps found',
         body: 'Installed apps will appear here when Android allows access.',
-        label: 'Refresh',
-        onPressed: controller.loadApps,
+        primaryLabel: 'Refresh',
+        onPrimary: controller.loadApps,
       );
     }
 
@@ -315,75 +316,6 @@ class _AppRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CenteredState extends StatelessWidget {
-  const _CenteredState({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: const Color(0xFF18D0B8), size: 42),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textMuted(context),
-                fontSize: 13,
-                height: 1.35,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 22),
-            TextButton(
-              onPressed: onPressed,
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF18D0B8),
-                foregroundColor: const Color(0xFF062322),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              child: Text(label),
-            ),
-          ],
-        ),
       ),
     );
   }
