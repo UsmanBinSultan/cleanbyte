@@ -6,6 +6,7 @@ import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/whatsapp_cleaner/whatsapp_cleaner_controller.dart';
+import 'package:sift/core/utils/formatters.dart';
 
 class WhatsappCleanerView extends StatelessWidget {
   const WhatsappCleanerView({super.key});
@@ -169,7 +170,7 @@ class _WaSummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _formatBytes(controller.totalBytes),
+                        formatBytes(controller.totalBytes),
                         style: TextStyle(
                           color: AppColors.textPrimary(context),
                           fontSize: 25,
@@ -447,7 +448,7 @@ class _WaMediaSummary extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '${_formatBytes(controller.totalBytes)} - tap items to select and delete',
+          '${formatBytes(controller.totalBytes)} - tap items to select and delete',
           style: TextStyle(
             color: AppColors.textMuted(context),
             fontSize: 12,
@@ -532,7 +533,7 @@ class _WaGridItem extends StatelessWidget {
                 right: 7,
                 bottom: 8,
                 child: Text(
-                  _formatBytes(item.size),
+                  formatBytes(item.size),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -610,7 +611,7 @@ class _WaListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_formatBytes(item.size)} - ${_formatDate(item.modified)}',
+                    '${formatBytes(item.size)} - ${formatShortDate(item.modified)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -893,36 +894,6 @@ Color _typeColor(WhatsappMediaType type) {
     case WhatsappMediaType.documents:
       return const Color(0xFF5D78B8);
   }
-}
-
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var size = bytes.toDouble();
-  var unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size = size / 1024;
-    unitIndex++;
-  }
-  final decimals = size >= 10 || unitIndex == 0 ? 0 : 1;
-  return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
-}
-
-String _formatDate(DateTime date) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
 }
 
 class _Header extends StatelessWidget {

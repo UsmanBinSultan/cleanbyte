@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:sift/core/utils/formatters.dart';
 import 'package:sift/models/blur_result.dart';
 import 'package:sift/services/blur_cache.dart';
 import 'package:sift/services/blur_detector.dart';
@@ -93,6 +94,26 @@ enum MediaCleanupMode {
             ? RequestType.common
             : RequestType.video
       : RequestType.image;
+
+  /// Plural noun for this mode, used in confirmation copy and empty states.
+  String get mediaName {
+    if (isVideos) {
+      return 'videos';
+    }
+    if (isScreenshots) {
+      return 'screenshots';
+    }
+    if (isDuplicates) {
+      return 'duplicate photos';
+    }
+    if (isInvisible) {
+      return 'invisible photos';
+    }
+    if (isLargeFiles) {
+      return 'files';
+    }
+    return 'photos';
+  }
 }
 
 class SimilarPhotosController extends GetxController {
@@ -213,6 +234,36 @@ class SimilarPhotosController extends GetxController {
   }
 
   bool isSelected(AssetEntity asset) => selectedIds.contains(asset.id);
+
+  /// Caption shown under a grid tile: size, duplicate count, blur score, or
+  /// capture date depending on the active mode.
+  String assetDetailLabel(AssetEntity asset) {
+    if (mode.isLargeFiles || mode.isVideos) {
+      return formatBytes(assetByteSizes[asset.id], emptyLabel: 'Size unavailable');
+    }
+    if (mode.isDuplicates) {
+      final count = duplicateGroupCounts[asset.id] ?? 2;
+      return '$count duplicates - '
+          '${formatBytes(assetByteSizes[asset.id], emptyLabel: 'Size unavailable')}';
+    }
+    if (mode.isBlurred) {
+      final variance = blurResults[asset.id]?.variance;
+      if (variance == null) {
+        return 'Blur detected';
+      }
+      return 'Blur score ${variance.toStringAsFixed(1)}';
+    }
+    return formatShortDate(asset.createDateTime, recentBefore2000: true);
+  }
+
+  /// Caption shown on the full-screen swipe-review card.
+  String reviewDetailLabel(AssetEntity asset) {
+    if (mode.isDuplicates) {
+      final count = duplicateGroupCounts[asset.id] ?? 2;
+      return 'Very similar to ${count - 1} others';
+    }
+    return 'Very similar to 3 others';
+  }
 
   int reviewAssetIndex(AssetEntity asset) {
     final index = assets.indexWhere((candidate) => candidate.id == asset.id);

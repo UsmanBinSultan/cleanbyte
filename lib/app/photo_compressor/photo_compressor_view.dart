@@ -9,6 +9,7 @@ import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/photo_compressor/photo_compressor_controller.dart';
+import 'package:sift/core/utils/formatters.dart';
 
 class PhotoCompressorView extends StatelessWidget {
   const PhotoCompressorView({super.key});
@@ -192,25 +193,9 @@ class _PreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final compressed = controller.selectedPhotos.isEmpty
-        ? controller.lastCompressedPhoto
-        : null;
-    AssetEntity? photo = controller.selectedPhotos.firstOrNull;
-    if (photo == null && compressed != null) {
-      for (final candidate in controller.photos) {
-        if (candidate.id == compressed.id) {
-          photo = candidate;
-          break;
-        }
-      }
-    }
-    final previewCompressed = photo == null
-        ? compressed
-        : controller.compressedBySource[photo.id];
-    final percent = controller.selectedOriginalBytes == 0
-        ? 0
-        : (controller.estimatedSavings / controller.selectedOriginalBytes * 100)
-              .round();
+    final photo = controller.previewPhoto;
+    final previewCompressed = controller.previewCompressed;
+    final percent = controller.estimatedSavingsPercent;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -267,7 +252,7 @@ class _PreviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            controller.selectedCount == 0 && compressed != null
+            controller.showsLastCompressedHint
                 ? 'Last compressed photo is saved to your gallery.'
                 : controller.selectedCount == 0
                 ? 'Pick images below to create smaller JPEG copies.'
@@ -469,7 +454,7 @@ class _SavingsPanel extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            _formatBytes(controller.estimatedSavings),
+            formatBytes(controller.estimatedSavings),
             style: const TextStyle(
               color: Color(0xFF18D0B8),
               fontSize: 24,
@@ -509,8 +494,8 @@ class _PhotoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle = compressed == null
-        ? _formatBytes(originalSize)
-        : '${_formatBytes(compressed!.originalSize)} -> ${_formatBytes(compressed!.compressedSize)}';
+        ? formatBytes(originalSize)
+        : '${formatBytes(compressed!.originalSize)} -> ${formatBytes(compressed!.compressedSize)}';
 
     return InkWell(
       onTap: onTap,
@@ -737,16 +722,4 @@ class _CompressButton extends StatelessWidget {
       margin: const EdgeInsets.all(16),
     );
   }
-}
-
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var size = bytes.toDouble();
-  var unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size = size / 1024;
-    unitIndex++;
-  }
-  final decimals = size >= 10 || unitIndex == 0 ? 0 : 1;
-  return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
 }

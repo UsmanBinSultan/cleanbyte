@@ -91,6 +91,43 @@ class PhotoCompressorController extends GetxController {
     return savings > 0 ? savings : 0;
   }
 
+  /// Estimated savings as a whole percentage of the selected originals.
+  int get estimatedSavingsPercent => selectedOriginalBytes == 0
+      ? 0
+      : (estimatedSavings / selectedOriginalBytes * 100).round();
+
+  /// Photo shown in the before/after preview: the first selected photo, or the
+  /// source of the last compressed photo when nothing is selected.
+  AssetEntity? get previewPhoto {
+    final selected = selectedPhotos;
+    if (selected.isNotEmpty) {
+      return selected.first;
+    }
+    final fallback = lastCompressedPhoto;
+    if (fallback == null) {
+      return null;
+    }
+    for (final candidate in photos) {
+      if (candidate.id == fallback.id) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  /// Compressed result to show alongside [previewPhoto], if any.
+  CompressedPhoto? get previewCompressed {
+    final photo = previewPhoto;
+    if (photo != null) {
+      return compressedBySource[photo.id];
+    }
+    return selectedPhotos.isEmpty ? lastCompressedPhoto : null;
+  }
+
+  /// True when no photo is selected but a previous compression result exists.
+  bool get showsLastCompressedHint =>
+      selectedCount == 0 && lastCompressedPhoto != null;
+
   Future<void> loadPhotos() async {
     isLoading = true;
     errorMessage = null;

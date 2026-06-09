@@ -75,7 +75,6 @@ class HomeDashboardController extends GetxController {
   static const blurredPhotosKey = 'blurredPhotos';
   static const largeFilesKey = 'largeFiles';
   static const duplicateContactsKey = 'duplicateContacts';
-  static const processManagerKey = 'processManager';
   static const aiCleanupKey = 'aiCleanup';
   static const whatsappCleanerKey = 'whatsappCleaner';
   static const appsManagerKey = 'appsManager';
@@ -105,7 +104,6 @@ class HomeDashboardController extends GetxController {
       blurredPhotosKey,
       largeFilesKey,
       duplicateContactsKey,
-      processManagerKey,
       aiCleanupKey,
       whatsappCleanerKey,
       appsManagerKey,
@@ -167,11 +165,6 @@ class HomeDashboardController extends GetxController {
     _setMetrics({duplicateContactsKey: contactsMetric});
 
     _setMetrics({
-      processManagerKey: const DashboardMetric(
-        count: 0,
-        bytes: 0,
-        labelOverride: 'open_tool',
-      ),
       batteryManagerKey: const DashboardMetric(
         count: 0,
         bytes: 0,

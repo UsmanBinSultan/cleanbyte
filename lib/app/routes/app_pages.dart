@@ -5,8 +5,6 @@ import 'package:sift/app/apps_manager/apps_manager_binding.dart';
 import 'package:sift/app/apps_manager/apps_manager_view.dart';
 import 'package:sift/app/battery_manager/battery_manager_binding.dart';
 import 'package:sift/app/battery_manager/battery_manager_view.dart';
-import 'package:sift/app/categorical_photos/categorical_photos_binding.dart';
-import 'package:sift/app/categorical_photos/categorical_photos_view.dart';
 import 'package:sift/app/duplicate_contacts/duplicate_contacts_binding.dart';
 import 'package:sift/app/duplicate_contacts/duplicate_contacts_view.dart';
 import 'package:sift/app/home_dashboard/home_dashboard_binding.dart';
@@ -27,8 +25,6 @@ import 'package:sift/app/privacy_promise/privacy_promise_binding.dart';
 import 'package:sift/app/privacy_promise/privacy_promise_view.dart';
 import 'package:sift/app/problem_framing/problem_framing_binding.dart';
 import 'package:sift/app/problem_framing/problem_framing_view.dart';
-import 'package:sift/app/process_manager/process_manager_binding.dart';
-import 'package:sift/app/process_manager/process_manager_view.dart';
 import 'package:sift/app/recycle_bin/recycle_bin_binding.dart';
 import 'package:sift/app/recycle_bin/recycle_bin_view.dart';
 import 'package:sift/app/routes/app_routes.dart';
@@ -137,11 +133,6 @@ class AppPages {
       binding: AiCategoriesBinding(),
     ),
  
-    GetPage(
-      name: AppRoutes.processManager,
-      page: () => const ProcessManagerView(),
-      binding: ProcessManagerBinding(),
-    ),
     GetPage(
       name: AppRoutes.whatsappCleaner,
       page: () => const WhatsappCleanerView(),

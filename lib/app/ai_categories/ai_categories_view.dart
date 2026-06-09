@@ -68,26 +68,6 @@ class _CategoriesBody extends StatelessWidget {
       );
     }
 
-    // if (controller.errorMessage != null && controller.photos.isEmpty) {
-    //   return _CenteredState(
-    //     icon: LucideIcons.sparkles,
-    //     title: 'Categories unavailable',
-    //     body: controller.errorMessage!,
-    //     primaryLabel: 'Scan Again',
-    //     onPrimary: () => controller.scanLibrary(force: true),
-    //   );
-    // }
-
-    // if (controller.photos.isEmpty) {
-    //   return _CenteredState(
-    //     icon: LucideIcons.imageOff,
-    //     title: 'No photos found',
-    //     body: 'Photos from your library will appear here after scanning.',
-    //     primaryLabel: 'Scan Again',
-    //     onPrimary: () => controller.scanLibrary(force: true),
-    //   );
-    // }
-
     return RefreshIndicator(
       color: const Color(0xFF18D0B8),
       backgroundColor: Theme.of(context).brightness == Brightness.light
@@ -129,7 +109,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final percent = (controller.progress * 100).round();
+    final percent = controller.progressPercent;
 
     return Padding(
       padding: const EdgeInsets.all(28),
@@ -424,11 +404,7 @@ class AiCategoryPhotosView extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<AiCategoriesController>(
       builder: (controller) {
-        final photos = category == PhotoCategory.all
-            ? controller.photos
-            : controller.photos
-                  .where((photo) => photo.categories.contains(category))
-                  .toList(growable: false);
+        final photos = controller.photosFor(category);
 
         return Scaffold(
           backgroundColor: AppColors.pageBackground(context),

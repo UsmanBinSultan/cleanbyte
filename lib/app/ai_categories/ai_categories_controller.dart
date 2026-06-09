@@ -125,6 +125,9 @@ class AiCategoriesController extends GetxController {
 
   double get progress => totalToScan == 0 ? 0 : scannedCount / totalToScan;
 
+  /// Scan progress as a whole percentage, for display.
+  int get progressPercent => (progress * 100).round();
+
   int get totalPhotos => photos.length;
 
   List<PhotoCategory> get visibleCategories {
@@ -149,12 +152,15 @@ class AiCategoriesController extends GetxController {
     return categories;
   }
 
-  List<CategorizedPhoto> get filteredPhotos {
-    if (selectedCategory == PhotoCategory.all) {
+  List<CategorizedPhoto> get filteredPhotos => photosFor(selectedCategory);
+
+  /// Photos belonging to [category] (all photos for [PhotoCategory.all]).
+  List<CategorizedPhoto> photosFor(PhotoCategory category) {
+    if (category == PhotoCategory.all) {
       return photos;
     }
     return photos
-        .where((photo) => photo.categories.contains(selectedCategory))
+        .where((photo) => photo.categories.contains(category))
         .toList(growable: false);
   }
 

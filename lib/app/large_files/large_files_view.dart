@@ -5,6 +5,7 @@ import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/large_files/large_files_controller.dart';
+import 'package:sift/core/utils/formatters.dart';
 
 class LargeFilesView extends StatelessWidget {
   const LargeFilesView({super.key});
@@ -197,7 +198,7 @@ class _LargeFileRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_formatBytes(file.size)} - ${_formatDate(file.modified)}',
+                    '${formatBytes(file.size)} - ${formatShortDate(file.modified)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -453,32 +454,3 @@ class _LargeFilesBottomAction extends StatelessWidget {
   }
 }
 
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var size = bytes.toDouble();
-  var unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size = size / 1024;
-    unitIndex++;
-  }
-  final decimals = size >= 10 || unitIndex == 0 ? 0 : 1;
-  return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
-}
-
-String _formatDate(DateTime date) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
-}

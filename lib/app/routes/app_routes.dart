@@ -17,8 +17,6 @@ class AppRoutes {
   static const duplicateContacts = '/duplicate-contacts';
   static const swipeCleaner = '/swipe-cleaner';
   static const aiCategories = '/ai-categories';
-  static const categoricalPhotos = '/categorical-photos';
-  static const processManager = '/process-manager';
   static const whatsappCleaner = '/whatsapp-cleaner';
   static const appsManager = '/apps-manager';
   static const photoCompressor = '/photo-compressor';

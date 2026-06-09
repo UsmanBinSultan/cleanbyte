@@ -536,15 +536,6 @@ class _CategoryGrid extends StatelessWidget {
         color: const Color(0xFF64748B),
         route: AppRoutes.duplicateContacts,
       ),
-      // _CategoryData(
-      //   title: 'Process Manager',
-      //   subtitle: controller.metricSubtitle(
-      // //     HomeDashboardController.processManagerKey,
-      // //   ),
-      //   icon: LucideIcons.cpu,
-      //   color: const Color(0xFFE95D73),
-      //   route: AppRoutes.processManager,
-      // ),
       _CategoryData(
         title: 'ai cleanup',
         subtitle: controller.metricSubtitle(
@@ -554,13 +545,6 @@ class _CategoryGrid extends StatelessWidget {
         color: const Color(0xFF18D0B8),
         route: AppRoutes.initialScan,
       ),
-      // _CategoryData(
-      //   title: 'categorical photos',
-      //   subtitle: 'Animals, People, Pets, Shoes',
-      //   icon: LucideIcons.tags,
-      //   color: const Color(0xFF48C35A),
-      //   route: AppRoutes.categoricalPhotos,
-      // ),
       _CategoryData(
         title: 'Whatsapp Cleaner',
         subtitle: controller.metricSubtitle(

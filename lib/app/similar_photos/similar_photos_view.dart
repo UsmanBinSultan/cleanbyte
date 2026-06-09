@@ -8,6 +8,7 @@ import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/similar_photos/similar_photos_controller.dart';
+import 'package:sift/core/utils/formatters.dart';
 
 class SimilarPhotosView extends StatelessWidget {
   const SimilarPhotosView({super.key, this.mode = MediaCleanupMode.photos});
@@ -101,7 +102,7 @@ class _MediaBody extends StatelessWidget {
                   asset: asset,
                   isVideo: controller.mode.isVideos,
                   byteSize: controller.assetByteSizes[asset.id],
-                  detailLabel: _assetDetailLabel(controller, asset),
+                  detailLabel: controller.assetDetailLabel(asset),
                   selected: controller.isSelected(asset),
                   keep: controller.isDuplicateKeeper(asset),
                   onTap: controller.mode == MediaCleanupMode.photos
@@ -190,7 +191,7 @@ class _SwipeReviewPaneState extends State<_SwipeReviewPane> {
                           ..rotateZ(_dragDx / 1400),
                         child: _SwipePhotoCard(
                           asset: asset,
-                          subtitle: _reviewDetailLabel(controller, asset),
+                          subtitle: controller.reviewDetailLabel(asset),
                         ),
                       ),
                     ),
@@ -293,7 +294,7 @@ class _SwipeReviewHeader extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      _monthYearLabel(asset.createDateTime),
+                      monthYearLabel(asset.createDateTime),
                       style: const TextStyle(
                         color: Color(0xFF697589),
                         fontSize: 10,
@@ -386,7 +387,7 @@ class _SwipePhotoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _shortDateTimeLabel(asset.createDateTime),
+                    shortDateTimeLabel(asset.createDateTime),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -700,10 +701,10 @@ class _SwipeReviewStats extends StatelessWidget {
         children: [
           TextSpan(
             text:
-                '${_formatNumber(reviewed)} of ${_formatNumber(total)} reviewed - ',
+                '${formatThousands(reviewed)} of ${formatThousands(total)} reviewed - ',
           ),
           TextSpan(
-            text: _formatSavedBytes(controller.swipeSavedBytes),
+            text: formatBytes(controller.swipeSavedBytes),
             style: const TextStyle(color: Color(0xFF18D0B8)),
           ),
           const TextSpan(text: ' saved'),
@@ -847,7 +848,7 @@ class _AccessState extends StatelessWidget {
     return _CenteredState(
       icon: LucideIcons.image,
       title: 'Photo access needed'.tr,
-      body: 'Allow access to show your ${_mediaName(controller.mode)} here.'.tr,
+      body: 'Allow access to show your ${controller.mode.mediaName} here.'.tr,
       primaryLabel: 'Open Settings',
       onPrimary: controller.openSettings,
       secondaryLabel: 'Try Again',
@@ -1030,7 +1031,7 @@ class _MediaTile extends StatelessWidget {
                   bottom: 7,
                   child: _Pill(
                     icon: LucideIcons.play,
-                    label: _formatDuration(asset.videoDuration),
+                    label: formatDuration(asset.videoDuration),
                   ),
                 ),
               if (keep && !selected)
@@ -1249,7 +1250,7 @@ class _BottomAction extends StatelessWidget {
 Future<void> confirmAndDeleteSelected(
   SimilarPhotosController controller,
 ) async {
-  final mediaName = _mediaName(controller.mode);
+  final mediaName = controller.mode.mediaName;
   final confirmed = await Get.dialog<bool>(
     AlertDialog(
       backgroundColor: const Color(0xFF111929),
@@ -1292,162 +1293,4 @@ Future<void> confirmAndDeleteSelected(
     colorText: Colors.white,
     margin: const EdgeInsets.all(16),
   );
-}
-
-String _formatDuration(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  if (hours > 0) {
-    return '$hours:$minutes:$seconds';
-  }
-  return '${duration.inMinutes}:$seconds';
-}
-
-String _formatDate(DateTime date) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  if (date.year < 2000) {
-    return 'Recent';
-  }
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
-}
-
-String _formatBytes(int? bytes) {
-  if (bytes == null || bytes <= 0) {
-    return 'Size unavailable';
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var size = bytes.toDouble();
-  var unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size = size / 1024;
-    unitIndex++;
-  }
-
-  final decimals = size >= 10 || unitIndex == 0 ? 0 : 1;
-  return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
-}
-
-String _mediaName(MediaCleanupMode mode) {
-  if (mode.isVideos) {
-    return 'videos';
-  }
-  if (mode.isScreenshots) {
-    return 'screenshots';
-  }
-  if (mode.isDuplicates) {
-    return 'duplicate photos';
-  }
-  if (mode.isInvisible) {
-    return 'invisible photos';
-  }
-  if (mode.isLargeFiles) {
-    return 'files';
-  }
-  return 'photos';
-}
-
-String _assetDetailLabel(
-  SimilarPhotosController controller,
-  AssetEntity asset,
-) {
-  if (controller.mode.isLargeFiles || controller.mode.isVideos) {
-    return _formatBytes(controller.assetByteSizes[asset.id]);
-  }
-  if (controller.mode.isDuplicates) {
-    final count = controller.duplicateGroupCounts[asset.id] ?? 2;
-    return '$count duplicates - ${_formatBytes(controller.assetByteSizes[asset.id])}';
-  }
-  if (controller.mode.isBlurred) {
-    final variance = controller.blurResults[asset.id]?.variance;
-    if (variance == null) {
-      return 'Blur detected';
-    }
-    return 'Blur score ${variance.toStringAsFixed(1)}';
-  }
-  return _formatDate(asset.createDateTime);
-}
-
-String _reviewDetailLabel(
-  SimilarPhotosController controller,
-  AssetEntity asset,
-) {
-  if (controller.mode.isDuplicates) {
-    final count = controller.duplicateGroupCounts[asset.id] ?? 2;
-    return 'Very similar to ${count - 1} others';
-  }
-  return 'Very similar to 3 others';
-}
-
-String _monthYearLabel(DateTime date) {
-  if (date.year < 2000) {
-    return 'RECENT';
-  }
-  return '${_monthName(date.month).toUpperCase()} ${date.year}';
-}
-
-String _shortDateTimeLabel(DateTime date) {
-  if (date.year < 2000) {
-    return 'Recent';
-  }
-  final hour = date.hour == 0
-      ? 12
-      : date.hour > 12
-      ? date.hour - 12
-      : date.hour;
-  final minute = date.minute.toString().padLeft(2, '0');
-  final period = date.hour >= 12 ? 'PM' : 'AM';
-  return '${_monthName(date.month)} ${date.day} - $hour:$minute $period';
-}
-
-String _monthName(int month) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return months[(month - 1).clamp(0, 11)];
-}
-
-String _formatSavedBytes(int bytes) {
-  if (bytes <= 0) {
-    return '0 B';
-  }
-  return _formatBytes(bytes).replaceFirst('Size unavailable', '0 B');
-}
-
-String _formatNumber(int value) {
-  final text = value.toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < text.length; i++) {
-    final fromEnd = text.length - i;
-    buffer.write(text[i]);
-    if (fromEnd > 1 && fromEnd % 3 == 1) {
-      buffer.write(',');
-    }
-  }
-  return buffer.toString();
 }

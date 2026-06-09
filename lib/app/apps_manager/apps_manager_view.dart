@@ -5,6 +5,7 @@ import 'package:sift/app/apps_manager/apps_manager_controller.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/loading_shimmer.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
+import 'package:sift/core/utils/formatters.dart';
 
 class AppsManagerView extends StatelessWidget {
   const AppsManagerView({super.key});
@@ -85,7 +86,7 @@ class _AppsBody extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '${_formatBytes(controller.totalBytes)} total',
+              '${formatBytes(controller.totalBytes)} total',
               style: TextStyle(
                 color: AppColors.textMuted(context),
                 fontSize: 11,
@@ -301,7 +302,7 @@ class _AppRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_formatBytes(data.sizeBytes)} - ${_formatLastUsed(data.lastUsed)}',
+                  '${formatBytes(data.sizeBytes)} - ${formatLastUsed(data.lastUsed)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -401,38 +402,3 @@ Color _appColor(String value) {
   return colors[value.hashCode.abs() % colors.length];
 }
 
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var size = bytes.toDouble();
-  var unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size = size / 1024;
-    unitIndex++;
-  }
-  final decimals = size >= 10 || unitIndex == 0 ? 0 : 1;
-  return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
-}
-
-String _formatLastUsed(DateTime? value) {
-  if (value == null) {
-    return 'Last used unknown';
-  }
-
-  final now = DateTime.now();
-  final difference = now.difference(value);
-  if (difference.inDays <= 0) {
-    return 'Today';
-  }
-  if (difference.inDays == 1) {
-    return '1 day ago';
-  }
-  if (difference.inDays < 30) {
-    return '${difference.inDays} days ago';
-  }
-  if (difference.inDays < 365) {
-    final months = difference.inDays ~/ 30;
-    return months == 1 ? '1 month ago' : '$months months ago';
-  }
-  final years = difference.inDays ~/ 365;
-  return years == 1 ? '1 year ago' : '$years years ago';
-}
