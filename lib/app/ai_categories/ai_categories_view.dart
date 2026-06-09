@@ -93,8 +93,6 @@ class _CategoriesBody extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _CategoryGrid(controller: controller),
-            const SizedBox(height: 18),
-            _RescanButton(controller: controller),
           ],
         ),
       ),
@@ -358,38 +356,6 @@ class _CategoryCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RescanButton extends StatelessWidget {
-  const _RescanButton({required this.controller});
-
-  final AiCategoriesController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: TextButton.icon(
-        onPressed: controller.isScanning
-            ? null
-            : () => controller.scanLibrary(force: true),
-        icon: controller.isScanning
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFF18D0B8),
-                ),
-              )
-            : const Icon(LucideIcons.refreshCw, size: 14),
-        label: Text(controller.isScanning ? 'Scanning' : 'Scan Again'),
-        style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF18D0B8),
-          textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-        ),
       ),
     );
   }
