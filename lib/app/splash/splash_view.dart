@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/splash/splash_controller.dart';
 
 class SplashView extends StatefulWidget {
@@ -28,15 +29,28 @@ class _SplashViewState extends State<SplashView>
     super.dispose();
   }
 
+  /// Soft radial glow behind the logo. Dark mode keeps the original teal tones;
+  /// light mode uses a faint accent tint so it reads on the cream background.
+  List<Color> _glowColors(BuildContext context) {
+    if (AppColors.isLight(context)) {
+      return [
+        AppColors.accent.withValues(alpha: 0.16),
+        AppColors.accent.withValues(alpha: 0.07),
+        Colors.transparent,
+      ];
+    }
+    return const [Color(0xFF0C2832), Color(0x8A0C2832), Colors.transparent];
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<SplashController>(
       autoRemove: false,
       builder: (controller) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.pageBackground(context),
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.black,
+          backgroundColor: AppColors.pageBackground(context),
           elevation: 0,
         ),
         body: Stack(
@@ -45,15 +59,11 @@ class _SplashViewState extends State<SplashView>
               child: Container(
                 width: 230,
                 height: 230,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
-                    colors: [
-                      Color(0xFF0C2832),
-                      Color(0x8A0C2832),
-                      Colors.transparent,
-                    ],
-                    stops: [0, 0.48, 1],
+                    colors: _glowColors(context),
+                    stops: const [0, 0.48, 1],
                   ),
                 ),
               ),
@@ -72,20 +82,20 @@ class _SplashViewState extends State<SplashView>
                       // backgroundColor: Colors.transparent,
                     ),
                     const SizedBox(height: 28),
-                    const Text(
+                    Text(
                       'Clean Byte',
                       style: TextStyle(
-                        color: Color(0xFFC8CDD2),
+                        color: AppColors.textPrimary(context),
                         fontSize: 27,
                         height: 1,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 17),
-                    const Text(
+                    Text(
                       'The honest phone cleaner.',
                       style: TextStyle(
-                        color: Color(0xFF8D939E),
+                        color: AppColors.textMuted(context),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -116,6 +126,7 @@ class _SplashDots extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         final activeIndex = (animation.value * 3).floor().clamp(0, 2);
+        final dotColor = AppColors.textPrimary(context);
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -128,12 +139,12 @@ class _SplashDots extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: active ? 0.9 : 0.2),
+                color: dotColor.withValues(alpha: active ? 0.9 : 0.2),
                 shape: BoxShape.circle,
                 boxShadow: active
                     ? [
                         BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.45),
+                          color: dotColor.withValues(alpha: 0.45),
                           blurRadius: 8,
                         ),
                       ]

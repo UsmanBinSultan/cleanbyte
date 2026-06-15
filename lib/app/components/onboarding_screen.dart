@@ -51,7 +51,7 @@ class OnboardingScreen extends StatelessWidget {
     final compact = size.height < 720;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF081120),
+      backgroundColor: AppColors.pageBackground(context),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -85,8 +85,8 @@ class OnboardingScreen extends StatelessWidget {
                         if (body.isNotEmpty) ...[
                           Text(
                             body,
-                            style: const TextStyle(
-                              color: Color(0xFFA1A7B4),
+                            style: TextStyle(
+                              color: AppColors.textMuted(context),
                               fontSize: 13,
                               height: 1.55,
                               fontWeight: FontWeight.w600,
@@ -138,8 +138,8 @@ class OnboardingScreen extends StatelessWidget {
                             child: Text(
                               footer!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFF5D6574),
+                              style: TextStyle(
+                                color: AppColors.textFaint(context),
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -194,8 +194,8 @@ class _FakeStatusBar extends StatelessWidget {
                         ),
                         child: Text(
                           'skip'.tr,
-                          style: const TextStyle(
-                            color: Color(0xFF9AA0AA),
+                          style: TextStyle(
+                            color: AppColors.textMuted(context),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -218,6 +218,7 @@ class _OnboardingArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = AppColors.isLight(context);
     return SizedBox(
       width: double.infinity,
       height: type == OnboardingArtType.permission ? 138 : 174,
@@ -225,14 +226,22 @@ class _OnboardingArt extends StatelessWidget {
         painter: switch (type) {
           OnboardingArtType.library => _LibraryArtPainter(
             badgeLabel: badgeLabel ?? '12,400+',
+            isLight: isLight,
           ),
-          OnboardingArtType.privacy => _PrivacyArtPainter(),
-          OnboardingArtType.permission => _PermissionArtPainter(),
+          OnboardingArtType.privacy => _PrivacyArtPainter(isLight: isLight),
+          OnboardingArtType.permission => _PermissionArtPainter(
+            isLight: isLight,
+          ),
         },
       ),
     );
   }
 }
+
+/// Picks a theme-appropriate colour for the onboarding illustrations. The dark
+/// values are the originals (so dark mode is unchanged); the light values are
+/// tuned to read on the cream light background.
+Color _artColor(bool isLight, Color light, Color dark) => isLight ? light : dark;
 
 class _OnboardingTitle extends StatelessWidget {
   const _OnboardingTitle({required this.title, required this.highlight});
@@ -255,19 +264,19 @@ class _OnboardingTitle extends StatelessWidget {
       if (highlightedCount != null)
         TextSpan(
           text: highlight!.substring(highlightedCount.end).trimLeft(),
-          style: const TextStyle(color: Color(0xFF8D929D)),
+          style: TextStyle(color: AppColors.textMuted(context)),
         ),
       if (highlight != null && highlightedCount == null)
         TextSpan(
           text: '\n$highlight',
-          style: const TextStyle(color: Color(0xFF8D929D)),
+          style: TextStyle(color: AppColors.textMuted(context)),
         ),
     ];
 
     return Text.rich(
       TextSpan(children: children),
-      style: const TextStyle(
-        color: AppColors.fg,
+      style: TextStyle(
+        color: AppColors.textPrimary(context),
         fontSize: 20,
         height: 1.08,
         fontWeight: FontWeight.w900,
@@ -309,8 +318,8 @@ class _BulletRow extends StatelessWidget {
               children: [
                 Text(
                   bullet.title.tr,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.textPrimary(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
@@ -318,8 +327,8 @@ class _BulletRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   bullet.subtitle.tr,
-                  style: const TextStyle(
-                    color: Color(0xFF8B92A0),
+                  style: TextStyle(
+                    color: AppColors.textMuted(context),
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
@@ -351,7 +360,9 @@ class _Dots extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
-              color: active ? Colors.white : const Color(0xFF586070),
+              color: active
+                  ? AppColors.textPrimary(context)
+                  : AppColors.textFaint(context),
               borderRadius: BorderRadius.circular(999),
             ),
           );
@@ -402,9 +413,9 @@ class _SecondaryButton extends StatelessWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          backgroundColor: const Color(0xFF111A2A),
-          foregroundColor: const Color(0xFFC2C7D0),
-          side: const BorderSide(color: Color(0xFF263247)),
+          backgroundColor: AppColors.surfaceTint(context),
+          foregroundColor: AppColors.textPrimary(context),
+          side: BorderSide(color: AppColors.borderFor(context)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(11),
           ),
@@ -417,9 +428,10 @@ class _SecondaryButton extends StatelessWidget {
 }
 
 class _LibraryArtPainter extends CustomPainter {
-  const _LibraryArtPainter({required this.badgeLabel});
+  const _LibraryArtPainter({required this.badgeLabel, required this.isLight});
 
   final String badgeLabel;
+  final bool isLight;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -434,7 +446,11 @@ class _LibraryArtPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     final fill = Paint()
-      ..color = const Color(0xFF0B2330).withValues(alpha: 0.42);
+      ..color = _artColor(
+        isLight,
+        const Color(0xFFFFFFFF),
+        const Color(0xFF0B2330).withValues(alpha: 0.42),
+      );
     canvas.drawRRect(
       RRect.fromRectAndRadius(card, const Radius.circular(22)),
       fill,
@@ -445,7 +461,11 @@ class _LibraryArtPainter extends CustomPainter {
     );
 
     final stackPaint = Paint()
-      ..color = const Color(0xFF152033).withValues(alpha: 0.72);
+      ..color = _artColor(
+        isLight,
+        const Color(0xFFE7E0D5),
+        const Color(0xFF152033).withValues(alpha: 0.72),
+      );
     for (var i = 0; i < 5; i++) {
       final r = Rect.fromCenter(
         center: Offset(center.dx - 4 + i * 5, center.dy - 12 + i * 4),
@@ -459,7 +479,11 @@ class _LibraryArtPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndRadius(r, const Radius.circular(6)),
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.05)
+          ..color = _artColor(
+            isLight,
+            Colors.black.withValues(alpha: 0.05),
+            Colors.white.withValues(alpha: 0.05),
+          )
           ..style = PaintingStyle.stroke,
       );
     }
@@ -467,7 +491,12 @@ class _LibraryArtPainter extends CustomPainter {
     final front = Rect.fromCenter(center: center, width: 88, height: 62);
     canvas.drawRRect(
       RRect.fromRectAndRadius(front, const Radius.circular(6)),
-      Paint()..color = const Color(0xFF1A2D3F),
+      Paint()
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFDAD2C5),
+          const Color(0xFF1A2D3F),
+        ),
     );
     final path = Path()
       ..moveTo(front.left + 12, front.bottom - 10)
@@ -503,23 +532,37 @@ class _LibraryArtPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LibraryArtPainter oldDelegate) {
-    return oldDelegate.badgeLabel != badgeLabel;
+    return oldDelegate.badgeLabel != badgeLabel ||
+        oldDelegate.isLight != isLight;
   }
 }
 
 class _PrivacyArtPainter extends CustomPainter {
+  const _PrivacyArtPainter({required this.isLight});
+
+  final bool isLight;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2 + 2);
     final phone = Rect.fromCenter(center: center, width: 66, height: 140);
     canvas.drawRRect(
       RRect.fromRectAndRadius(phone, const Radius.circular(15)),
-      Paint()..color = const Color(0xFF101C31),
+      Paint()
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFFFFFFF),
+          const Color(0xFF101C31),
+        ),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(phone, const Radius.circular(15)),
       Paint()
-        ..color = const Color(0xFF3D4B62)
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFD3C9BA),
+          const Color(0xFF3D4B62),
+        )
         ..style = PaintingStyle.stroke,
     );
     canvas.drawRRect(
@@ -531,7 +574,12 @@ class _PrivacyArtPainter extends CustomPainter {
         ),
         const Radius.circular(99),
       ),
-      Paint()..color = const Color(0xFF465266),
+      Paint()
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFC2C8D1),
+          const Color(0xFF465266),
+        ),
     );
     for (var i = 0; i < 4; i++) {
       canvas.drawCircle(
@@ -594,22 +642,36 @@ class _PrivacyArtPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PrivacyArtPainter oldDelegate) =>
+      oldDelegate.isLight != isLight;
 }
 
 class _PermissionArtPainter extends CustomPainter {
+  const _PermissionArtPainter({required this.isLight});
+
+  final bool isLight;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final panel = Rect.fromCenter(center: center, width: 150, height: 106);
     canvas.drawRRect(
       RRect.fromRectAndRadius(panel, const Radius.circular(12)),
-      Paint()..color = const Color(0xFF121D31),
+      Paint()
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFFFFFFF),
+          const Color(0xFF121D31),
+        ),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(panel, const Radius.circular(12)),
       Paint()
-        ..color = const Color(0xFF2B3850)
+        ..color = _artColor(
+          isLight,
+          const Color(0xFFD3C9BA),
+          const Color(0xFF2B3850),
+        )
         ..style = PaintingStyle.stroke,
     );
 
@@ -623,7 +685,12 @@ class _PermissionArtPainter extends CustomPainter {
     for (final cell in cells) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(cell, const Radius.circular(4)),
-        Paint()..color = const Color(0xFF1D293D),
+        Paint()
+          ..color = _artColor(
+            isLight,
+            const Color(0xFFEDE6DB),
+            const Color(0xFF1D293D),
+          ),
       );
       final mountain = Path()
         ..moveTo(cell.left + 7, cell.bottom - 8)
@@ -632,11 +699,24 @@ class _PermissionArtPainter extends CustomPainter {
         ..lineTo(cell.right - 6, cell.top + 14)
         ..lineTo(cell.right - 3, cell.bottom - 8)
         ..close();
-      canvas.drawPath(mountain, Paint()..color = const Color(0xFF3A465A));
+      canvas.drawPath(
+        mountain,
+        Paint()
+          ..color = _artColor(
+            isLight,
+            const Color(0xFFBFC5CF),
+            const Color(0xFF3A465A),
+          ),
+      );
       canvas.drawCircle(
         Offset(cell.right - 8, cell.top + 9),
         3,
-        Paint()..color = const Color(0xFF667085),
+        Paint()
+          ..color = _artColor(
+            isLight,
+            const Color(0xFF99A1AE),
+            const Color(0xFF667085),
+          ),
       );
     }
 
@@ -684,7 +764,8 @@ class _PermissionArtPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PermissionArtPainter oldDelegate) =>
+      oldDelegate.isLight != isLight;
 }
 
 void _drawText(

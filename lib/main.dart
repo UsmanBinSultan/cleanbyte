@@ -18,7 +18,7 @@ void main() {
 class CleanByteApp extends StatelessWidget {
   const CleanByteApp({super.key});
 
-  @override
+     @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,

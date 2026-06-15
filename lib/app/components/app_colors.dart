@@ -25,8 +25,26 @@ class AppColors {
   static const Color lightSurfaceTint = Color(0xFFFFF5EA);
   static const Color lightBorder = Color(0xFFE9DDD0);
 
+  // Shimmer / skeleton-loader colors. The dark values match the existing
+  // surface tones (so a skeleton sits just above the dark page background); the
+  // light values are a warm grey base with a near-white sweep so the effect
+  // stays "visible but subtle" on the cream light theme instead of rendering as
+  // dark slabs with an imperceptible highlight.
+  static const Color shimmerBaseDark = Color(0xFF111929);
+  static const Color shimmerHighlightDark = Color(0xFF1C2A3E);
+  static const Color shimmerBaseLight = Color(0xFFE3DFD8);
+  static const Color shimmerHighlightLight = Color(0xFFF6F4F0);
+
   static bool isLight(BuildContext context) {
     return Theme.of(context).brightness == Brightness.light;
+  }
+
+  static Color shimmerBase(BuildContext context) {
+    return isLight(context) ? shimmerBaseLight : shimmerBaseDark;
+  }
+
+  static Color shimmerHighlight(BuildContext context) {
+    return isLight(context) ? shimmerHighlightLight : shimmerHighlightDark;
   }
 
   static Color pageBackground(BuildContext context) {

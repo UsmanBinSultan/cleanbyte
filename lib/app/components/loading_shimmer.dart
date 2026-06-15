@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:sift/app/components/app_colors.dart';
 
+/// Sweeps an animated gradient across [child] to produce a skeleton-loader
+/// shimmer.
+///
+/// The effect is drawn with a [ShaderMask] using [BlendMode.srcATop], so the
+/// gradient colour is painted over every opaque pixel of [child]. That means
+/// the placeholder fills inside [child] (the `_Block`s) only define the *shape*
+/// of the skeleton — their own colour never shows. The visible colour comes
+/// entirely from [baseColor]/[highlightColor].
+///
+/// When those are left null they resolve from [AppColors] for the current
+/// theme, which is what keeps the shimmer correct in both light and dark mode.
+/// Previously they were hardcoded to dark-navy constants, so in light mode the
+/// skeletons rendered as dark slabs and the animated highlight was too close in
+/// tone to be perceptible.
 class LoadingShimmer extends StatefulWidget {
   const LoadingShimmer({
     super.key,
     required this.child,
-    this.baseColor = const Color(0xFF111929),
-    this.highlightColor = const Color(0xFF1C2A3E),
+    this.baseColor,
+    this.highlightColor,
   });
 
   final Widget child;
-  final Color baseColor;
-  final Color highlightColor;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   @override
   State<LoadingShimmer> createState() => _LoadingShimmerState();
@@ -37,6 +52,10 @@ class _LoadingShimmerState extends State<LoadingShimmer>
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = widget.baseColor ?? AppColors.shimmerBase(context);
+    final highlightColor =
+        widget.highlightColor ?? AppColors.shimmerHighlight(context);
+
     return AnimatedBuilder(
       animation: _animation,
       child: widget.child,
@@ -48,11 +67,7 @@ class _LoadingShimmerState extends State<LoadingShimmer>
             return LinearGradient(
               begin: Alignment(-1 + slide, -0.4),
               end: Alignment(1 + slide, 0.4),
-              colors: [
-                widget.baseColor,
-                widget.highlightColor,
-                widget.baseColor,
-              ],
+              colors: [baseColor, highlightColor, baseColor],
               stops: const [0.25, 0.5, 0.75],
             ).createShader(bounds);
           },
@@ -118,8 +133,9 @@ class ListShimmer extends StatelessWidget {
         itemBuilder: (context, index) => Container(
           height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 14),
+          // Shape-only fill (masked by the shimmer shader); themed for clarity.
           decoration: BoxDecoration(
-            color: const Color(0xFF111929),
+            color: AppColors.surface(context),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Row(
