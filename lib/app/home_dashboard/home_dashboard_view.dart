@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/home_dashboard/home_dashboard_controller.dart';
 import 'package:sift/app/routes/app_routes.dart';
@@ -16,9 +17,7 @@ class HomeDashboardView extends StatelessWidget {
       autoRemove: false,
       builder: (controller) {
         return Scaffold(
-          backgroundColor: Theme.of(context).brightness == Brightness.light
-              ? const Color(0xFFF8F4EC)
-              : const Color(0xFF071120),
+          backgroundColor: AppColors.pageBackground(context),
           body: SafeArea(
             bottom: false,
             child: Center(
@@ -38,7 +37,9 @@ class HomeDashboardView extends StatelessWidget {
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: SiftBottomNavBar(
-                        activeIndex: controller.selectedIndex,
+                        activeIndex: controller.selectedIndex == 3
+                            ? 4
+                            : controller.selectedIndex,
                       ),
                     ),
                   ],
@@ -59,147 +60,476 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No media access → show nothing but a grant-access gate (no storage/data).
+    if (!controller.hasMediaAccess && !controller.isLoadingSummary) {
+      return _AccessGate(controller: controller);
+    }
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 104),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _HomeHeader(),
-          const SizedBox(height: 26),
-          _StorageRing(controller: controller),
+          _HomeHeader(controller: controller),
+          const SizedBox(height: 16),
+          _StorageCard(controller: controller),
+          const SizedBox(height: 22),
+          _QuickActions(controller: controller),
+          const SizedBox(height: 22),
+          _TodaysSuggestions(controller: controller),
           const SizedBox(height: 18),
-          _FreeUpBanner(controller: controller),
-          const SizedBox(height: 16),
-          _QuickCleanCard(controller: controller),
-          const SizedBox(height: 16),
-          _CategoryGrid(controller: controller),
+          const _ApproveFooter(),
         ],
       ),
     );
   }
 }
 
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader();
+class _AccessGate extends StatelessWidget {
+  const _AccessGate({required this.controller});
+
+  final HomeDashboardController controller;
 
   @override
   Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 6, 24, 104),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: _CircleIconButton(
+              icon: LucideIcons.settings,
+              onTap: () => controller.changeTab(3),
+            ),
+          ),
+          const Spacer(),
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: AppColors.iconChipBg(
+                context,
+                AppColors.accent,
+                AppColors.tintTeal,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              LucideIcons.imagePlus,
+              size: 38,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'Allow access to clean up',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textPrimary(context),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Clean Byte scans your photos and files on your device to find '
+            'what is taking up space. Your data never leaves your phone.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textMuted(context),
+              fontSize: 14,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 26),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: AppColors.accentGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: TextButton.icon(
+                onPressed: controller.requestMediaAccess,
+                icon: const Icon(LucideIcons.unlock, size: 17),
+                label: const Text('Allow Access'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: controller.openMediaSettings,
+            child: Text(
+              'Open Settings',
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                LucideIcons.shieldCheck,
+                size: 13,
+                color: AppColors.textFaint(context),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Nothing leaves your device',
+                style: TextStyle(
+                  color: AppColors.textFaint(context),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header: greeting + reviewable subtitle + settings gear.
+// ---------------------------------------------------------------------------
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.controller});
+
+  final HomeDashboardController controller;
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reclaimable = controller.reclaimableBytes;
+    final subtitle = controller.isLoadingSummary && reclaimable <= 0
+        ? 'Checking what can be cleaned…'
+        : reclaimable > 0
+        ? '${HomeDashboardController.formatBytes(reclaimable)} may be reviewable'
+        : 'Your storage looks tidy';
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'good morning'.tr,
+                '$_greeting 👋',
                 style: TextStyle(
-                  color: Color(0xFF717A8A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary(context),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 3),
               Text(
-                'Clean Byte'.tr,
+                subtitle,
                 style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.light
-                      ? const Color(0xFF17201B)
-                      : Colors.white,
-                  fontSize: 22,
-                  height: 1,
-                  fontWeight: FontWeight.w900,
+                  color: AppColors.textMuted(context),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
+        ),
+        _CircleIconButton(
+          icon: LucideIcons.settings,
+          onTap: () => controller.changeTab(3),
         ),
       ],
     );
   }
 }
 
-class _StorageRing extends StatelessWidget {
-  const _StorageRing({required this.controller});
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.borderFor(context)),
+        ),
+        child: Icon(icon, size: 18, color: AppColors.textMuted(context)),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Storage card: teal gradient with a small usage ring + Start Smart Scan.
+// ---------------------------------------------------------------------------
+class _StorageCard extends StatelessWidget {
+  const _StorageCard({required this.controller});
 
   final HomeDashboardController controller;
 
   @override
   Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
     final storage = controller.storage;
+    final hasData = storage.totalBytes > 0;
+    final percent = (storage.usedFraction * 100).round();
     final usedText = _formatStorageBytes(storage.usedBytes);
     final totalText = _formatStorageBytes(storage.totalBytes);
     final freeText = _formatStorageBytes(storage.freeBytes);
-    return Center(
-      child: SizedBox(
-        width: 190,
-        height: 190,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CustomPaint(
-              size: const Size.square(190),
-              painter: _StorageRingPainter(progress: storage.usedFraction),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: AppColors.accentGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentDeep.withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 66,
+                height: 66,
+                child: CustomPaint(
+                  painter: _UsageRingPainter(
+                    progress: hasData ? storage.usedFraction : 0,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          hasData ? '$percent%' : '--',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            height: 1,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Text(
+                          'used',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      usedText.split(' ').first,
-                      style: TextStyle(
-                        color: light ? const Color(0xFF17201B) : Colors.white,
-                        fontSize: 36,
-                        height: 0.9,
-                        fontWeight: FontWeight.w900,
+                      hasData ? usedText : 'Calculating…',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        height: 1.1,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 5),
-                      child: Text(
-                        usedText.split(' ').last,
-                        style: TextStyle(
-                          color: light ? const Color(0xFF17201B) : Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
+                    const SizedBox(height: 2),
+                    if (hasData)
+                      Text(
+                        'of $totalText used',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
+                    const SizedBox(height: 8),
+                    if (hasData)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$freeText available',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  storage.totalBytes <= 0
-                      ? 'calculating storage'.tr
-                      : 'used of'.trParams({'total': totalText}),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  controller.isLoadingSummary
+                      ? 'Scanning your storage…'
+                      : 'Tap to run a smart scan',
                   style: const TextStyle(
-                    color: Color(0xFF8A93A2),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  storage.totalBytes <= 0
-                      ? 'please wait'.tr
-                      : 'free space'.trParams({'free': freeText}),
-                  style: const TextStyle(
-                    color: Color(0xFFFFB41B),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
+              ),
+              _StartScanButton(controller: controller),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StartScanButton extends StatelessWidget {
+  const _StartScanButton({required this.controller});
+
+  final HomeDashboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(99),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(99),
+        onTap: () async {
+          await Get.toNamed(AppRoutes.initialScan);
+          await controller.refreshSummary();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                LucideIcons.search,
+                size: 14,
+                color: AppColors.accentDeep,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Start Smart Scan',
+                style: TextStyle(
+                  color: AppColors.accentDeep,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _UsageRingPainter extends CustomPainter {
+  const _UsageRingPainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 5;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final base = Paint()
+      ..color = Colors.white.withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    final fill = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, 0, math.pi * 2, false, base);
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      (math.pi * 2 * progress.clamp(0, 1)).toDouble(),
+      false,
+      fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _UsageRingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
 
 String _formatStorageBytes(num bytes) {
@@ -220,400 +550,225 @@ String _formatStorageBytes(num bytes) {
   return '${(bytes / kb).toStringAsFixed(1)} KB';
 }
 
-class _StorageRingPainter extends CustomPainter {
-  const _StorageRingPainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final rect = Rect.fromCircle(center: center, radius: 73);
-    final basePaint = Paint()
-      ..color = const Color(0xFF172132)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
-      ..strokeCap = StrokeCap.round;
-    final progressPaint = Paint()
-      ..shader = const SweepGradient(
-        colors: [
-          Color(0xFFFFB319),
-          Color(0xFFFFC132),
-          Color(0xFFFFA914),
-          Color(0xFFFFB319),
-        ],
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, 0, math.pi * 2, false, basePaint);
-    canvas.drawArc(
-      rect,
-      -math.pi / 2 + 0.1,
-      (math.pi * 2 * progress.clamp(0, 1)).toDouble(),
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _StorageRingPainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
-}
-
-class _FreeUpBanner extends StatelessWidget {
-  const _FreeUpBanner({required this.controller});
+// ---------------------------------------------------------------------------
+// Quick actions: a 2-column grid of category cards with a "See all" toggle.
+// ---------------------------------------------------------------------------
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({required this.controller});
 
   final HomeDashboardController controller;
 
+  List<_ActionData> _all() => [
+    _ActionData(
+      title: 'Duplicate Photos',
+      metricKey: HomeDashboardController.duplicatesKey,
+      icon: LucideIcons.copy,
+      iconColor: AppColors.accent,
+      tint: AppColors.tintTeal,
+      route: AppRoutes.duplicates,
+    ),
+    _ActionData(
+      title: 'Large Videos',
+      metricKey: HomeDashboardController.largeVideosKey,
+      icon: LucideIcons.video,
+      iconColor: AppColors.iconAmber,
+      tint: AppColors.tintAmber,
+      route: AppRoutes.largeVideos,
+    ),
+    _ActionData(
+      title: 'Screenshots',
+      metricKey: HomeDashboardController.screenshotsKey,
+      icon: LucideIcons.smartphone,
+      iconColor: AppColors.iconPurple,
+      tint: AppColors.tintPurple,
+      route: AppRoutes.screenshots,
+    ),
+    _ActionData(
+      title: 'Files',
+      metricKey: HomeDashboardController.largeFilesKey,
+      icon: LucideIcons.folder,
+      iconColor: AppColors.iconBlue,
+      tint: AppColors.tintBlue,
+      route: AppRoutes.largeFiles,
+    ),
+    _ActionData(
+      title: 'Photos',
+      metricKey: HomeDashboardController.similarPhotosKey,
+      icon: LucideIcons.image,
+      iconColor: AppColors.accent,
+      tint: AppColors.tintMint,
+      route: AppRoutes.similarPhotos,
+    ),
+    _ActionData(
+      title: 'Blurred Photos',
+      metricKey: HomeDashboardController.blurredPhotosKey,
+      icon: LucideIcons.focus,
+      iconColor: AppColors.iconPink,
+      tint: AppColors.tintPink,
+      route: AppRoutes.blurredPhotos,
+    ),
+    _ActionData(
+      title: 'Photo Compressor',
+      metricKey: HomeDashboardController.photoCompressorKey,
+      icon: LucideIcons.minimize2,
+      iconColor: AppColors.iconPink,
+      tint: AppColors.tintPink,
+      route: AppRoutes.photoCompressor,
+    ),
+    _ActionData(
+      title: 'Duplicate Contacts',
+      metricKey: HomeDashboardController.duplicateContactsKey,
+      icon: LucideIcons.users,
+      iconColor: AppColors.iconAmber,
+      tint: AppColors.tintAmber,
+      route: AppRoutes.duplicateContacts,
+    ),
+    _ActionData(
+      title: 'WhatsApp Cleaner',
+      metricKey: HomeDashboardController.whatsappCleanerKey,
+      icon: LucideIcons.messageCircle,
+      iconColor: AppColors.whatsapp,
+      tint: AppColors.tintGreen,
+      route: AppRoutes.whatsappCleaner,
+    ),
+    _ActionData(
+      title: 'Apps Manager',
+      metricKey: HomeDashboardController.appsManagerKey,
+      icon: LucideIcons.layoutGrid,
+      iconColor: AppColors.iconBlue,
+      tint: AppColors.tintBlue,
+      route: AppRoutes.appsManager,
+    ),
+    _ActionData(
+      title: 'Battery Saver',
+      metricKey: HomeDashboardController.batteryManagerKey,
+      icon: LucideIcons.batteryCharging,
+      iconColor: AppColors.accent,
+      tint: AppColors.tintGreen,
+      route: AppRoutes.batteryManager,
+    ),
+    _ActionData(
+      title: 'AI Cleanup',
+      metricKey: HomeDashboardController.aiCleanupKey,
+      icon: LucideIcons.sparkles,
+      iconColor: AppColors.iconPurple,
+      tint: AppColors.tintPurple,
+      route: AppRoutes.initialScan,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    return InkWell(
-      onTap: () async {
-        await Get.toNamed(AppRoutes.initialScan);
-        await controller.refreshSummary();
-      },
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: light ? const Color(0xFFE6FBF4) : const Color(0xFF082E36),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: light ? const Color(0xFF95E0D0) : const Color(0xFF0D5960),
-          ),
-          boxShadow: light
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF14B8A6).withValues(alpha: 0.14),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'you can free up some space'.tr,
+    final all = _all();
+    final visible = all.take(4).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Quick Actions',
                 style: TextStyle(
-                  color: light ? const Color(0xFF17201B) : Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary(context),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
                 ),
               ),
-              Icon(
-                rtl ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
-                color: Color(0xFF18D0B8),
-                size: 17,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickCleanCard extends StatelessWidget {
-  const _QuickCleanCard({required this.controller});
-
-  final HomeDashboardController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final readyText = HomeDashboardController.formatBytes(
-      controller.quickCleanReadyBytes,
-    );
-    return InkWell(
-      onTap: controller.isQuickCleaning ? null : controller.quickClean,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        height: 74,
-        padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
-        decoration: BoxDecoration(
-          color: light ? Colors.white : const Color(0xFF0B2D35),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: light ? const Color(0xFFE4DCCB) : const Color(0xFF0B5B62),
-          ),
-          boxShadow: light
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFBFA46B).withValues(alpha: 0.16),
-                    blurRadius: 22,
-                    offset: const Offset(0, 12),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1DC0AE),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: controller.isQuickCleaning
-                  ? const Center(
-                      child: SizedBox(
-                        width: 19,
-                        height: 19,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        ),
+            ),
+            InkWell(
+              onTap: () async {
+                await Get.toNamed(AppRoutes.allActions);
+                await controller.refreshSummary();
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  children: [
+                    Text(
+                      'See all',
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
-                    )
-                  : const Icon(
-                      LucideIcons.activity,
-                      color: Colors.white,
-                      size: 21,
                     ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'cache clean'.tr,
-                    style: TextStyle(
-                      color: light ? const Color(0xFF17201B) : Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 15,
+                      color: AppColors.accent,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    controller.isQuickCleaning
-                        ? 'cleaning app cache'.tr
-                        : 'auto tidy ready'.trParams({'ready': readyText}),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF8D96A5),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              rtl ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
-              color: const Color(0xFF738091),
-              size: 17,
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          itemCount: visible.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.55,
+          ),
+          itemBuilder: (context, index) =>
+              _ActionCard(data: visible[index], controller: controller),
+        ),
+      ],
     );
   }
 }
 
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.controller});
-
-  final HomeDashboardController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _CategoryData(
-        title: 'Photos',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.similarPhotosKey,
-        ),
-        icon: LucideIcons.image,
-        color: const Color(0xFF18D0B8),
-        route: AppRoutes.similarPhotos,
-      ),
-      _CategoryData(
-        title: 'large videos',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.largeVideosKey,
-        ),
-        icon: LucideIcons.video,
-        color: const Color(0xFFD99A20),
-        route: AppRoutes.largeVideos,
-      ),
-      _CategoryData(
-        title: 'screenshots',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.screenshotsKey,
-        ),
-        icon: LucideIcons.camera,
-        color: const Color(0xFF7C54E8),
-        route: AppRoutes.screenshots,
-      ),
-
-      // _CategoryData(
-      //   title: 'Live Photos',
-      //   subtitle: controller.metricSubtitle(
-      //     HomeDashboardController.livePhotosKey,
-      //   ),
-      //   icon: LucideIcons.image,
-      //   color: const Color(0xFF2E9DCC),
-      // ),
-      _CategoryData(
-        title: 'duplicates',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.duplicatesKey,
-        ),
-        icon: LucideIcons.copy,
-        color: const Color(0xFF64748B),
-        route: AppRoutes.duplicates,
-      ),
-      _CategoryData(
-        title: 'blurred photos',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.blurredPhotosKey,
-        ),
-        icon: LucideIcons.focus,
-        color: const Color(0xFFE95D73),
-        route: AppRoutes.blurredPhotos,
-      ),
-      _CategoryData(
-        title: 'large files',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.largeFilesKey,
-        ),
-        icon: Icons.insert_drive_file_outlined,
-        color: const Color(0xFF64748B),
-        route: AppRoutes.largeFiles,
-      ),
-      _CategoryData(
-        title: 'duplicate contacts',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.duplicateContactsKey,
-        ),
-        icon: Icons.group_outlined,
-        color: const Color(0xFF64748B),
-        route: AppRoutes.duplicateContacts,
-      ),
-      _CategoryData(
-        title: 'ai cleanup',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.aiCleanupKey,
-        ),
-        icon: LucideIcons.sparkles,
-        color: const Color(0xFF18D0B8),
-        route: AppRoutes.initialScan,
-      ),
-      _CategoryData(
-        title: 'Whatsapp Cleaner',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.whatsappCleanerKey,
-        ),
-        icon: LucideIcons.messageCircle,
-        color: const Color(0xFF10B981),
-        route: AppRoutes.whatsappCleaner,
-      ),
-
-      _CategoryData(
-        title: 'Apps Manager',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.appsManagerKey,
-        ),
-        icon: LucideIcons.layoutGrid,
-        color: const Color(0xFF64748B),
-        route: AppRoutes.appsManager,
-      ),
-      _CategoryData(
-        title: 'Photo Compressor',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.photoCompressorKey,
-        ),
-        icon: LucideIcons.minimize2,
-        color: const Color(0xFF7C54E8),
-        route: AppRoutes.photoCompressor,
-      ),
-      _CategoryData(
-        title: 'Battery Manager',
-        subtitle: controller.metricSubtitle(
-          HomeDashboardController.batteryManagerKey,
-        ),
-        icon: LucideIcons.battery,
-        color: const Color(0xFFD99A20),
-        route: AppRoutes.batteryManager,
-      ),
-    ];
-
-    return GridView.builder(
-      itemCount: cards.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.42,
-      ),
-      itemBuilder: (context, index) =>
-          _CategoryCard(data: cards[index], controller: controller),
-    );
-  }
-}
-
-class _CategoryData {
-  const _CategoryData({
+class _ActionData {
+  const _ActionData({
     required this.title,
-    required this.subtitle,
+    required this.metricKey,
     required this.icon,
-    required this.color,
-    this.route,
+    required this.iconColor,
+    required this.tint,
+    required this.route,
   });
 
   final String title;
-  final String subtitle;
+  final String metricKey;
   final IconData icon;
-  final Color color;
-  final String? route;
+  final Color iconColor;
+  final Color tint;
+  final String route;
 }
 
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.data, required this.controller});
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({required this.data, required this.controller});
 
-  final _CategoryData data;
+  final _ActionData data;
   final HomeDashboardController controller;
 
   @override
   Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
     return InkWell(
-      onTap: data.route == null
-          ? null
-          : () async {
-              await Get.toNamed(data.route!);
-              await controller.refreshSummary();
-            },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
+      onTap: () async {
+        await Get.toNamed(data.route);
+        await controller.refreshSummary();
+      },
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: light ? Colors.white : const Color(0xFF111929),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: light ? const Color(0xFFE8E1D3) : const Color(0xFF1F2A3E),
-          ),
-          boxShadow: light
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.borderFor(context)),
+          boxShadow: AppColors.isLight(context)
               ? [
                   BoxShadow(
-                    color: data.color.withValues(alpha: 0.14),
-                    blurRadius: 22,
-                    offset: const Offset(0, 10),
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : null,
@@ -621,39 +776,339 @@ class _CategoryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: data.color.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(data.icon, color: data.color, size: 18),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.iconChipBg(
+                      context,
+                      data.iconColor,
+                      data.tint,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(data.icon, color: data.iconColor, size: 20),
+                ),
+                const Spacer(),
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 15,
+                  color: AppColors.textFaint(context),
+                ),
+              ],
             ),
             const Spacer(),
             Text(
-              data.title.tr,
+              data.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: light ? const Color(0xFF17201B) : Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
-              data.subtitle,
+              controller.metricSubtitle(data.metricKey),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF8B94A3),
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Today's suggestions: a card of recommended actions derived from metrics.
+// ---------------------------------------------------------------------------
+class _TodaysSuggestions extends StatelessWidget {
+  const _TodaysSuggestions({required this.controller});
+
+  final HomeDashboardController controller;
+
+  List<_Suggestion> _build() {
+    final suggestions = <_Suggestion>[];
+    void add(
+      String key,
+      String Function(int count) title,
+      IconData icon,
+      Color color,
+      Color tint,
+      String route,
+    ) {
+      final metric = controller.metric(key);
+      if (metric.count <= 0) return;
+      final savings = metric.bytes > 0
+          ? '~${HomeDashboardController.formatBytes(metric.bytes)} potential savings'
+          : '${metric.count} to review';
+      suggestions.add(
+        _Suggestion(
+          title: title(metric.count),
+          subtitle: savings,
+          icon: icon,
+          color: color,
+          tint: tint,
+          route: route,
+        ),
+      );
+    }
+
+    add(
+      HomeDashboardController.similarPhotosKey,
+      (c) => 'Review $c similar photos',
+      LucideIcons.search,
+      AppColors.accent,
+      AppColors.tintMint,
+      AppRoutes.similarPhotos,
+    );
+    add(
+      HomeDashboardController.largeVideosKey,
+      (c) => 'Compress $c large videos',
+      LucideIcons.video,
+      AppColors.iconAmber,
+      AppColors.tintAmber,
+      AppRoutes.largeVideos,
+    );
+    add(
+      HomeDashboardController.screenshotsKey,
+      (c) => 'Clean $c old screenshots',
+      LucideIcons.smartphone,
+      AppColors.iconPurple,
+      AppColors.tintPurple,
+      AppRoutes.screenshots,
+    );
+    add(
+      HomeDashboardController.duplicateContactsKey,
+      (c) => 'Merge $c duplicate contacts',
+      LucideIcons.users,
+      AppColors.iconBlue,
+      AppColors.tintBlue,
+      AppRoutes.duplicateContacts,
+    );
+    return suggestions.take(4).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final suggestions = _build();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              "Today's Suggestions",
+              style: TextStyle(
+                color: AppColors.textPrimary(context),
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const Spacer(),
+            if (suggestions.isNotEmpty)
+              Container(
+                width: 20,
+                height: 20,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.iconChipBg(
+                    context,
+                    AppColors.accent,
+                    AppColors.tintTeal,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${suggestions.length}',
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface(context),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.borderFor(context)),
+            boxShadow: AppColors.isLight(context)
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: suggestions.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Text(
+                      controller.isLoadingSummary
+                          ? 'Looking for things to clean…'
+                          : "You're all caught up 🎉",
+                      style: TextStyle(
+                        color: AppColors.textMuted(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+              : Column(
+                  children: [
+                    for (var i = 0; i < suggestions.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColors.borderFor(context),
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                      _SuggestionRow(
+                        suggestion: suggestions[i],
+                        controller: controller,
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Suggestion {
+  const _Suggestion({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.tint,
+    required this.route,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Color tint;
+  final String route;
+}
+
+class _SuggestionRow extends StatelessWidget {
+  const _SuggestionRow({required this.suggestion, required this.controller});
+
+  final _Suggestion suggestion;
+  final HomeDashboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        await Get.toNamed(suggestion.route);
+        await controller.refreshSummary();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.iconChipBg(
+                  context,
+                  suggestion.color,
+                  suggestion.tint,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(suggestion.icon, color: suggestion.color, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    suggestion.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    suggestion.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 15,
+              color: AppColors.textFaint(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ApproveFooter extends StatelessWidget {
+  const _ApproveFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            LucideIcons.shieldCheck,
+            size: 13,
+            color: AppColors.textFaint(context),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Nothing is deleted until you approve',
+            style: TextStyle(
+              color: AppColors.textFaint(context),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -669,10 +1124,10 @@ class _EmptyTab extends StatelessWidget {
     return Center(
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: AppColors.textPrimary(context),
           fontSize: 24,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

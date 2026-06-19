@@ -102,7 +102,7 @@ class _SubscriptionCard extends StatelessWidget {
                 width: 25,
                 height: 25,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF18D0B8),
+                  color: AppColors.accent,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -207,7 +207,7 @@ class _ActiveBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircleAvatar(radius: 2.5, backgroundColor: Color(0xFF18D0B8)),
+        const CircleAvatar(radius: 2.5, backgroundColor: AppColors.accent),
         const SizedBox(width: 6),
         Text(
           'ACTIVE'.tr,
@@ -365,7 +365,7 @@ class _ActionRow extends StatelessWidget {
                 height: 15,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF18D0B8),
+                  color: AppColors.accent,
                 ),
               )
             else
@@ -393,7 +393,7 @@ class _TrustCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(LucideIcons.shieldCheck, color: Color(0xFF11A982), size: 17),
+          const Icon(LucideIcons.shieldCheck, color: AppColors.accent, size: 17),
           const SizedBox(width: 9),
           Expanded(
             child: Column(

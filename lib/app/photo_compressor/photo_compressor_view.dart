@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -81,10 +80,8 @@ class _CompressorBody extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF18D0B8),
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.white
-          : const Color(0xFF111929),
+      color: AppColors.accent,
+      backgroundColor: AppColors.surface(context),
       onRefresh: controller.loadPhotos,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -112,7 +109,7 @@ class _CompressorBody extends StatelessWidget {
               Text(
                 controller.errorMessage!,
                 style: const TextStyle(
-                  color: Color(0xFFFF9A87),
+                  color: AppColors.danger,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
@@ -136,7 +133,7 @@ class _CompressorBody extends StatelessWidget {
                   icon: const Icon(LucideIcons.imagePlus, size: 14),
                   label: const Text('Pick photos'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF18D0B8),
+                    foregroundColor: AppColors.accent,
                     textStyle: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
@@ -146,7 +143,7 @@ class _CompressorBody extends StatelessWidget {
                 TextButton(
                   onPressed: controller.toggleSelectAll,
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF18D0B8),
+                    foregroundColor: AppColors.accent,
                     textStyle: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
@@ -219,7 +216,7 @@ class _PreviewCard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Icon(
                   LucideIcons.arrowRight,
-                  color: Color(0xFF18D0B8),
+                  color: AppColors.accent,
                   size: 32,
                 ),
               ),
@@ -234,7 +231,7 @@ class _PreviewCard extends StatelessWidget {
                   Text(
                     '-$percent%',
                     style: const TextStyle(
-                      color: Color(0xFF18D0B8),
+                      color: AppColors.accent,
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
                     ),
@@ -289,8 +286,8 @@ class _ImagePreview extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: const Color(0xFF172237),
-          border: Border.all(color: const Color(0xFF3A4A67), width: 2),
+          color: AppColors.surfaceTint(context),
+          border: Border.all(color: AppColors.borderFor(context), width: 2),
         ),
         child: compressed == null
             ? asset == null
@@ -361,7 +358,7 @@ class _QualityChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: selected
-                ? const Color(0xFF18D0B8)
+                ? AppColors.accent
                 : AppColors.borderFor(context),
             width: selected ? 2 : 1,
           ),
@@ -428,7 +425,7 @@ class _SavingsPanel extends StatelessWidget {
           Text(
             formatBytes(controller.estimatedSavings),
             style: const TextStyle(
-              color: Color(0xFF18D0B8),
+              color: AppColors.accent,
               fontSize: 24,
               fontWeight: FontWeight.w900,
             ),
@@ -524,12 +521,10 @@ class _PhotoRow extends StatelessWidget {
               width: 26,
               height: 26,
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF18D0B8) : Colors.transparent,
+                color: selected ? AppColors.accent : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
                 border: Border.all(
-                  color: selected
-                      ? const Color(0xFF18D0B8)
-                      : const Color(0xFF4E596B),
+                  color: selected ? AppColors.accent : AppColors.borderFor(context),
                 ),
               ),
               child: selected
@@ -583,16 +578,16 @@ class _CompressButton extends StatelessWidget {
                 : 'Compress selected (${controller.selectedCount} photos)',
           ),
           style: TextButton.styleFrom(
-            disabledBackgroundColor: const Color(0xFF111929),
-            disabledForegroundColor: const Color(0xFF586274),
-            backgroundColor: const Color(0xFF18B8A8),
+            disabledBackgroundColor: AppColors.surfaceTint(context),
+            disabledForegroundColor: AppColors.textFaint(context),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             textStyle: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

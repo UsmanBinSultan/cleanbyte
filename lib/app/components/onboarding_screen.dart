@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -48,25 +46,34 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final compact = size.height < 720;
+    final compact = size.height < 760;
+    final firstPage = step == 0;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBackground(context),
+      backgroundColor: firstPage
+          ? AppColors.mintBg
+          : AppColors.pageBackground(context),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 430),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(19, compact ? 8 : 10, 19, 12),
+              padding: EdgeInsets.fromLTRB(20, compact ? 8 : 10, 20, 14),
               child: Column(
                 children: [
                   _FakeStatusBar(skipRoute: skipRoute),
-                  SizedBox(height: compact ? 20 : 34),
+                  SizedBox(
+                    height: firstPage
+                        ? (compact ? 8 : 18)
+                        : (compact ? 20 : 34),
+                  ),
                   _OnboardingArt(type: artType, badgeLabel: artBadgeLabel),
-                  SizedBox(height: compact ? 22 : 38),
+                  SizedBox(height: firstPage ? 24 : (compact ? 22 : 38)),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: firstPage
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
                       children: [
                         if (eyebrow != null) ...[
                           Text(
@@ -81,22 +88,31 @@ class OnboardingScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                         ],
                         _OnboardingTitle(title: title, highlight: highlight),
-                        const SizedBox(height: 16),
+                        SizedBox(height: firstPage ? 16 : 16),
                         if (body.isNotEmpty) ...[
                           Text(
                             body,
+                            textAlign: firstPage
+                                ? TextAlign.center
+                                : TextAlign.start,
                             style: TextStyle(
                               color: AppColors.textMuted(context),
-                              fontSize: 13,
-                              height: 1.55,
-                              fontWeight: FontWeight.w600,
+                              fontSize: firstPage ? 14 : 13,
+                              height: firstPage ? 1.65 : 1.55,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                         if (bullets.isNotEmpty) ...[
-                          const SizedBox(height: 18),
-                          for (final bullet in bullets)
-                            _BulletRow(bullet: bullet),
+                          SizedBox(height: firstPage ? 24 : 18),
+                          firstPage
+                              ? _BulletCard(bullets: bullets)
+                              : Column(
+                                  children: [
+                                    for (final bullet in bullets)
+                                      _BulletRow(bullet: bullet),
+                                  ],
+                                ),
                         ],
                         if (linkLabel != null) ...[
                           const SizedBox(height: 12),
@@ -120,7 +136,7 @@ class OnboardingScreen extends StatelessWidget {
                         ],
                         const Spacer(),
                         _Dots(activeIndex: step),
-                        SizedBox(height: compact ? 12 : 14),
+                        SizedBox(height: compact ? 16 : 22),
                         _PrimaryButton(
                           label: primaryLabel,
                           onPressed: onPrimary,
@@ -195,9 +211,9 @@ class _FakeStatusBar extends StatelessWidget {
                         child: Text(
                           'skip'.tr,
                           style: TextStyle(
-                            color: AppColors.textMuted(context),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.textFaint(context),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -221,7 +237,11 @@ class _OnboardingArt extends StatelessWidget {
     final isLight = AppColors.isLight(context);
     return SizedBox(
       width: double.infinity,
-      height: type == OnboardingArtType.permission ? 138 : 174,
+      height: type == OnboardingArtType.privacy
+          ? 370
+          : type == OnboardingArtType.permission
+          ? 138
+          : 174,
       child: CustomPaint(
         painter: switch (type) {
           OnboardingArtType.library => _LibraryArtPainter(
@@ -241,7 +261,8 @@ class _OnboardingArt extends StatelessWidget {
 /// Picks a theme-appropriate colour for the onboarding illustrations. The dark
 /// values are the originals (so dark mode is unchanged); the light values are
 /// tuned to read on the cream light background.
-Color _artColor(bool isLight, Color light, Color dark) => isLight ? light : dark;
+Color _artColor(bool isLight, Color light, Color dark) =>
+    isLight ? light : dark;
 
 class _OnboardingTitle extends StatelessWidget {
   const _OnboardingTitle({required this.title, required this.highlight});
@@ -269,18 +290,83 @@ class _OnboardingTitle extends StatelessWidget {
       if (highlight != null && highlightedCount == null)
         TextSpan(
           text: '\n$highlight',
-          style: TextStyle(color: AppColors.textMuted(context)),
+          style: const TextStyle(color: AppColors.accent),
         ),
     ];
 
     return Text.rich(
       TextSpan(children: children),
+      textAlign: TextAlign.center,
       style: TextStyle(
         color: AppColors.textPrimary(context),
-        fontSize: 20,
-        height: 1.08,
+        fontSize: 28,
+        height: 1.18,
         fontWeight: FontWeight.w900,
-        letterSpacing: -0.2,
+        letterSpacing: -0.7,
+      ),
+    );
+  }
+}
+
+class _BulletCard extends StatelessWidget {
+  const _BulletCard({required this.bullets});
+
+  final List<OnboardingBullet> bullets;
+
+  @override
+  Widget build(BuildContext context) {
+    final icons = [
+      LucideIcons.search,
+      LucideIcons.image,
+      LucideIcons.shieldCheck,
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          for (var i = 0; i < bullets.length; i++)
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE8FFF4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icons[i], color: AppColors.accent, size: 20),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    bullets[i].title.tr,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.lightFg,
+                      fontSize: 10,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -356,13 +442,11 @@ class _Dots extends StatelessWidget {
           final active = index == activeIndex;
           return AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            width: active ? 16 : 4,
-            height: 4,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: active ? 24 : 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: active
-                  ? AppColors.textPrimary(context)
-                  : AppColors.textFaint(context),
+              color: active ? AppColors.accent : const Color(0xFFE2F0EE),
               borderRadius: BorderRadius.circular(999),
             ),
           );
@@ -380,20 +464,37 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 38,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: AppColors.accentGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accent.withValues(alpha: 0.28),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          backgroundColor: AppColors.accent,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(28),
           ),
-          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        child: Text(label),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label),
+            const SizedBox(width: 6),
+            const Icon(LucideIcons.arrowRight, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -544,106 +645,81 @@ class _PrivacyArtPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2 + 2);
-    final phone = Rect.fromCenter(center: center, width: 66, height: 140);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(phone, const Radius.circular(15)),
-      Paint()
-        ..color = _artColor(
-          isLight,
-          const Color(0xFFFFFFFF),
-          const Color(0xFF101C31),
-        ),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(phone, const Radius.circular(15)),
-      Paint()
-        ..color = _artColor(
-          isLight,
-          const Color(0xFFD3C9BA),
-          const Color(0xFF3D4B62),
-        )
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(center.dx, phone.top + 8),
-          width: 26,
-          height: 4,
-        ),
-        const Radius.circular(99),
-      ),
-      Paint()
-        ..color = _artColor(
-          isLight,
-          const Color(0xFFC2C8D1),
-          const Color(0xFF465266),
-        ),
-    );
-    for (var i = 0; i < 4; i++) {
-      canvas.drawCircle(
-        center,
-        42 + i * 18,
-        Paint()
-          ..color = AppColors.accent.withValues(alpha: 0.12 - i * 0.02)
-          ..style = PaintingStyle.stroke,
+    final cardPaints = [
+      const LinearGradient(colors: [Color(0xFF60A5FA), Color(0xFF14B8A6)]),
+      const LinearGradient(colors: [Color(0xFFFCA5A5), Color(0xFFF472B6)]),
+      const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF22C55E)]),
+      const LinearGradient(colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)]),
+      const LinearGradient(colors: [Color(0xFF67E8F9), Color(0xFF0EA5A4)]),
+      const LinearGradient(colors: [Color(0xFF94A3B8), Color(0xFF22C55E)]),
+      const LinearGradient(colors: [Color(0xFF2DD4BF), Color(0xFFFDE68A)]),
+      const LinearGradient(colors: [Color(0xFF93C5FD), Color(0xFFF9A8D4)]),
+      const LinearGradient(colors: [Color(0xFF4ADE80), Color(0xFFEAB308)]),
+    ];
+    final positions = [
+      const Offset(8, 20),
+      const Offset(112, 20),
+      const Offset(216, 20),
+      const Offset(320, 20),
+      const Offset(-6, 140),
+      const Offset(98, 140),
+      const Offset(202, 140),
+      const Offset(306, 140),
+      const Offset(22, 260),
+      const Offset(126, 260),
+      const Offset(230, 260),
+      const Offset(334, 260),
+    ];
+
+    final linePaint = Paint()
+      ..color = AppColors.accent.withValues(alpha: 0.38)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    final center = Offset(size.width / 2, 185);
+    canvas.drawCircle(center, 115, linePaint);
+    canvas.drawLine(Offset(0, 185), Offset(size.width, 185), linePaint);
+
+    for (var i = 0; i < positions.length; i++) {
+      final rect = Rect.fromLTWH(positions[i].dx, positions[i].dy, 88, 108);
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(28));
+      canvas.save();
+      canvas.rotate((i % 3 - 1) * 0.025);
+      canvas.drawRRect(rrect, Paint()..color = Colors.white);
+      canvas.drawRRect(
+        rrect.deflate(2),
+        Paint()..shader = cardPaints[i % cardPaints.length].createShader(rect),
       );
-    }
-    for (var i = 0; i < 10; i++) {
-      final angle = -2.8 + i * 0.62;
-      final start = center + Offset(math.cos(angle), math.sin(angle)) * 58;
-      final end = center + Offset(math.cos(angle), math.sin(angle)) * 84;
-      canvas.drawLine(
-        start,
-        end,
+      canvas.drawRRect(
+        rrect,
         Paint()
-          ..color = AppColors.accent.withValues(alpha: 0.45)
-          ..strokeWidth = 1,
+          ..color = Colors.white.withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
       );
+      canvas.restore();
     }
 
-    final lockBody = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: center + const Offset(0, 12),
-        width: 42,
-        height: 36,
-      ),
-      const Radius.circular(7),
-    );
-    canvas.drawRRect(lockBody, Paint()..color = AppColors.accent);
-    canvas.drawArc(
-      Rect.fromCenter(
-        center: center + const Offset(0, -1),
-        width: 29,
-        height: 34,
-      ),
-      math.pi,
-      math.pi,
-      false,
-      Paint()
-        ..color = AppColors.accent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6,
-    );
-    canvas.drawCircle(
-      center + const Offset(0, 12),
-      4,
-      Paint()..color = const Color(0xFF061019),
-    );
-    canvas.drawLine(
-      center + const Offset(0, 15),
-      center + const Offset(0, 21),
-      Paint()
-        ..color = const Color(0xFF061019)
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
+    _drawBadge(canvas, 'Similar', const Offset(112, 140));
+    _drawBadge(canvas, 'Similar', const Offset(216, 140));
+    _drawBadge(canvas, 'Blur', const Offset(126, 260));
+    _drawBadge(canvas, 'Duplicate', const Offset(334, 260));
   }
 
   @override
   bool shouldRepaint(covariant _PrivacyArtPainter oldDelegate) =>
       oldDelegate.isLight != isLight;
+}
+
+void _drawBadge(Canvas canvas, String label, Offset cardOffset) {
+  final rect = Rect.fromLTWH(
+    cardOffset.dx + 8,
+    cardOffset.dy + 8,
+    label.length > 5 ? 66 : 46,
+    20,
+  );
+  final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(99));
+  canvas.drawRRect(rrect, Paint()..color = AppColors.accent);
+  _drawText(canvas, label, rect.center, 9, Colors.white, TextAlign.center);
 }
 
 class _PermissionArtPainter extends CustomPainter {

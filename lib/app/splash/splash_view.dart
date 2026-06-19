@@ -1,41 +1,19 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/splash/splash_controller.dart';
 
-class SplashView extends StatefulWidget {
+class SplashView extends StatelessWidget {
   const SplashView({super.key});
 
-  @override
-  State<SplashView> createState() => _SplashViewState();
-}
-
-class _SplashViewState extends State<SplashView>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _dotsController;
-
-  @override
-  void initState() {
-    super.initState();
-    _dotsController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _dotsController.dispose();
-    super.dispose();
-  }
-
   /// Soft radial glow behind the logo. Dark mode keeps the original teal tones;
-  /// light mode uses a faint accent tint so it reads on the cream background.
+  /// light mode uses a faint accent tint so it reads on the light background.
   List<Color> _glowColors(BuildContext context) {
     if (AppColors.isLight(context)) {
       return [
         AppColors.accent.withValues(alpha: 0.16),
-        AppColors.accent.withValues(alpha: 0.07),
+        AppColors.accent.withValues(alpha: 0.06),
         Colors.transparent,
       ];
     }
@@ -48,65 +26,74 @@ class _SplashViewState extends State<SplashView>
       autoRemove: false,
       builder: (controller) => Scaffold(
         backgroundColor: AppColors.pageBackground(context),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: AppColors.pageBackground(context),
-          elevation: 0,
-        ),
         body: Stack(
           children: [
-            Center(
+            Align(
+              alignment: const Alignment(0, -0.35),
               child: Container(
-                width: 230,
-                height: 230,
+                width: 280,
+                height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: _glowColors(context),
-                    stops: const [0, 0.48, 1],
+                    stops: const [0, 0.5, 1],
                   ),
                 ),
               ),
             ),
             Center(
-              child: Transform.translate(
-                offset: const Offset(0, -18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/icons/cleaner.png',
-                      width: 80,
-                      fit: BoxFit.contain,
-                      // color: Colors.transparent,
-                      // backgroundColor: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _LogoBadge(),
+                  const SizedBox(height: 26),
+                  Text(
+                    'Clean Byte',
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
+                      fontSize: 27,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                     ),
-                    const SizedBox(height: 28),
-                    Text(
-                      'Clean Byte',
-                      style: TextStyle(
-                        color: AppColors.textPrimary(context),
-                        fontSize: 27,
-                        height: 1,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Clean storage. Keep memories.',
+                    style: TextStyle(
+                      color: AppColors.textMuted(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(height: 17),
-                    Text(
-                      'The honest phone cleaner.',
-                      style: TextStyle(
-                        color: AppColors.textMuted(context),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             Align(
-              alignment: const Alignment(0, 0.88),
-              child: _SplashDots(animation: _dotsController),
+              alignment: const Alignment(0, 0.86),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Preparing your space…',
+                    style: TextStyle(
+                      color: AppColors.textMuted(context),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -115,45 +102,108 @@ class _SplashViewState extends State<SplashView>
   }
 }
 
-class _SplashDots extends StatelessWidget {
-  const _SplashDots({required this.animation});
+/// The app logo inside a white circle wrapped by a teal accent ring that
+/// animates from empty to full on a loop, like a progress fill.
+class _LogoBadge extends StatefulWidget {
+  const _LogoBadge();
 
-  final Animation<double> animation;
+  @override
+  State<_LogoBadge> createState() => _LogoBadgeState();
+}
+
+class _LogoBadgeState extends State<_LogoBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final activeIndex = (animation.value * 3).floor().clamp(0, 2);
-        final dotColor = AppColors.textPrimary(context);
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (index) {
-            final active = index == activeIndex;
-
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 4,
-              height: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: dotColor.withValues(alpha: active ? 0.9 : 0.2),
-                shape: BoxShape.circle,
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: dotColor.withValues(alpha: 0.45),
-                          blurRadius: 8,
-                        ),
-                      ]
-                    : null,
-              ),
-            );
-          }),
-        );
-      },
+    return SizedBox(
+      width: 112,
+      height: 112,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) => CustomPaint(
+              size: const Size.square(112),
+              painter: _RingPainter(progress: Curves.easeInOut.transform(
+                _controller.value,
+              )),
+            ),
+          ),
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              color: AppColors.surface(context),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(18),
+            child: Image.asset('assets/icons/cleaner.png', fit: BoxFit.contain),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  const _RingPainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 3;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final base = Paint()
+      ..color = AppColors.accent.withValues(alpha: 0.16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    final arc = Paint()
+      ..shader = const SweepGradient(
+        colors: [AppColors.accent, AppColors.accentDeep, AppColors.accent],
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, base);
+    // Sweep the accent arc from empty to full as the animation progresses.
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      (math.pi * 2 * progress).clamp(0.0001, math.pi * 2),
+      false,
+      arc,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

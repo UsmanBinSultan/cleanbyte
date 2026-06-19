@@ -46,6 +46,7 @@ dependencies:
   path_provider: ^2.1.5
   image: ^4.5.4
   purchases_flutter: ^10.1.0
+  video_thumbnail: ^0.5.3
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +73,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/onboarding/
 
 flutter_launcher_icons:
   android: true

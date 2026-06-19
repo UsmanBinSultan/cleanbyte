@@ -59,6 +59,9 @@ class HomeDashboardController extends GetxController {
   int selectedIndex = 0;
   bool isLoadingSummary = true;
   bool isQuickCleaning = false;
+  // Whether photo/media access has been granted. The dashboard shows no storage
+  // or metrics until this is true.
+  bool hasMediaAccess = false;
   StorageSnapshot storage = const StorageSnapshot(totalBytes: 0, freeBytes: 0);
   Map<String, DashboardMetric> metrics = <String, DashboardMetric>{};
   Set<String> loadingMetricKeys = <String>{};
@@ -92,8 +95,47 @@ class HomeDashboardController extends GetxController {
     update();
   }
 
+  /// Current media-permission state without prompting the user.
+  Future<bool> _checkMediaAccess() async {
+    try {
+      final state = await PhotoManager.getPermissionState(
+        requestOption: const PermissionRequestOption(),
+      );
+      return state.hasAccess;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Prompt for media access (from the home "grant access" gate), then load.
+  Future<void> requestMediaAccess() async {
+    final result = await PhotoManager.requestPermissionExtend();
+    hasMediaAccess = result.hasAccess;
+    update();
+    if (hasMediaAccess) {
+      await refreshSummary();
+    }
+  }
+
+  Future<void> openMediaSettings() => PhotoManager.openSetting();
+
   Future<void> refreshSummary() async {
     isLoadingSummary = true;
+    update();
+
+    // Show nothing until the user has granted access.
+    hasMediaAccess = await _checkMediaAccess();
+    if (!hasMediaAccess) {
+      storage = const StorageSnapshot(totalBytes: 0, freeBytes: 0);
+      metrics = <String, DashboardMetric>{};
+      loadingMetricKeys = <String>{};
+      reclaimableBytes = 0;
+      quickCleanReadyBytes = 0;
+      isLoadingSummary = false;
+      update();
+      return;
+    }
+
     loadingMetricKeys = {
       similarPhotosKey,
       largeVideosKey,

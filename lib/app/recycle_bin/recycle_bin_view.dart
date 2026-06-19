@@ -66,7 +66,7 @@ class _Header extends StatelessWidget {
           : TextButton(
               onPressed: () => _confirmEmpty(context, controller),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF7A5F),
+                foregroundColor: AppColors.danger,
                 textStyle: const TextStyle(fontWeight: FontWeight.w800),
               ),
               child: Text(
@@ -150,12 +150,12 @@ class _RetentionNote extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 6, 16, 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF18D0B8).withValues(alpha: 0.12),
+        color: AppColors.accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.info, size: 18, color: Color(0xFF18D0B8)),
+          const Icon(LucideIcons.info, size: 18, color: AppColors.accent),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -233,7 +233,7 @@ class _TrashedTile extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: const Color(0xFF18D0B8),
+                    color: AppColors.accent,
                     width: 3,
                   ),
                   borderRadius: BorderRadius.circular(14),
@@ -248,7 +248,7 @@ class _TrashedTile extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   color: selected
-                      ? const Color(0xFF18D0B8)
+                      ? AppColors.accent
                       : Colors.black.withValues(alpha: 0.35),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 1.5),
@@ -338,9 +338,11 @@ class _BottomActions extends StatelessWidget {
                     : const Icon(LucideIcons.undo2, size: 18),
                 label: Text('restore'.trParams({'count': '$count'})),
                 style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF18D0B8),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: const Color(0xFF143F3B),
+                  disabledBackgroundColor: AppColors.accent.withValues(
+                    alpha: 0.4,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -361,9 +363,11 @@ class _BottomActions extends StatelessWidget {
                 icon: const Icon(LucideIcons.trash2, size: 18),
                 label: Text('delete now'.trParams({'count': '$count'})),
                 style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7A5F),
+                  backgroundColor: AppColors.danger,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: const Color(0xFF5A3A33),
+                  disabledBackgroundColor: AppColors.danger.withValues(
+                    alpha: 0.4,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -463,7 +467,7 @@ Future<bool> _confirmDialog(
         TextButton(
           onPressed: () => Get.back(result: true),
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFFF7A5F),
+            foregroundColor: AppColors.danger,
           ),
           child: Text(confirmLabel),
         ),

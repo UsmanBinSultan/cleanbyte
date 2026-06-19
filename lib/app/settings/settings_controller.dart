@@ -24,6 +24,18 @@ enum AppThemePreference {
   }
 }
 
+enum ScanFrequency {
+  manual,
+  daily,
+  weekly;
+
+  String get label => switch (this) {
+    ScanFrequency.manual => 'Manual',
+    ScanFrequency.daily => 'Daily',
+    ScanFrequency.weekly => 'Weekly',
+  };
+}
+
 class LanguageOption {
   const LanguageOption({
     required this.nameKey,
@@ -103,8 +115,17 @@ class SettingsController extends GetxController {
   AppThemePreference themePreference = AppThemePreference.dark;
   Locale currentLocale = const Locale('en', 'US');
   bool onDeviceOnly = true;
+  bool autoScan = true;
+  bool smartSuggestions = true;
+  bool detectSimilarPhotos = true;
+  bool mergeContacts = false;
+  bool requireApproval = true;
+  ScanFrequency scanFrequency = ScanFrequency.weekly;
   bool isLoadingPhotoCollections = false;
+  bool isClearingScanData = false;
   List<PhotoCollectionInfo> photoCollections = <PhotoCollectionInfo>[];
+
+  String get scanFrequencyLabel => scanFrequency.label;
 
   @override
   void onInit() {
@@ -152,6 +173,71 @@ class SettingsController extends GetxController {
     onDeviceOnly = value;
     update();
     await _saveSettings();
+  }
+
+  Future<void> toggleAutoScan(bool value) async {
+    autoScan = value;
+    update();
+    await _saveSettings();
+  }
+
+  Future<void> toggleSmartSuggestions(bool value) async {
+    smartSuggestions = value;
+    update();
+    await _saveSettings();
+  }
+
+  Future<void> toggleDetectSimilarPhotos(bool value) async {
+    detectSimilarPhotos = value;
+    update();
+    await _saveSettings();
+  }
+
+  Future<void> toggleMergeContacts(bool value) async {
+    mergeContacts = value;
+    update();
+    await _saveSettings();
+  }
+
+  Future<void> toggleRequireApproval(bool value) async {
+    requireApproval = value;
+    update();
+    await _saveSettings();
+  }
+
+  Future<void> setScanFrequency(ScanFrequency value) async {
+    scanFrequency = value;
+    update();
+    await _saveSettings();
+  }
+
+  /// Clears cached scan results (AI categories, blur scores) so the next scan
+  /// runs fresh. Does not touch the user's photos.
+  Future<int> clearScanData() async {
+    isClearingScanData = true;
+    update();
+    var cleared = 0;
+    try {
+      final directory = await getApplicationSupportDirectory();
+      const cacheFiles = [
+        'ai_categories_scan_cache.json',
+        'blur_cache.json',
+      ];
+      for (final name in cacheFiles) {
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}$name',
+        );
+        if (await file.exists()) {
+          await file.delete();
+          cleared++;
+        }
+      }
+    } catch (_) {
+      // Nothing persisted to clear.
+    }
+    isClearingScanData = false;
+    update();
+    return cleared;
   }
 
   Future<void> openGallery() async {
@@ -226,6 +312,15 @@ class SettingsController extends GetxController {
         currentLocale = Locale(languageCode, countryCode);
       }
       onDeviceOnly = decoded['onDeviceOnly'] != false;
+      autoScan = decoded['autoScan'] != false;
+      smartSuggestions = decoded['smartSuggestions'] != false;
+      detectSimilarPhotos = decoded['detectSimilarPhotos'] != false;
+      mergeContacts = decoded['mergeContacts'] == true;
+      requireApproval = decoded['requireApproval'] != false;
+      scanFrequency = ScanFrequency.values.firstWhere(
+        (f) => f.name == decoded['scanFrequency'],
+        orElse: () => ScanFrequency.weekly,
+      );
 
       Get.changeThemeMode(themeMode);
       Get.updateLocale(currentLocale);
@@ -245,6 +340,12 @@ class SettingsController extends GetxController {
           'languageCode': currentLocale.languageCode,
           'countryCode': currentLocale.countryCode,
           'onDeviceOnly': onDeviceOnly,
+          'autoScan': autoScan,
+          'smartSuggestions': smartSuggestions,
+          'detectSimilarPhotos': detectSimilarPhotos,
+          'mergeContacts': mergeContacts,
+          'requireApproval': requireApproval,
+          'scanFrequency': scanFrequency.name,
         }),
         flush: true,
       );

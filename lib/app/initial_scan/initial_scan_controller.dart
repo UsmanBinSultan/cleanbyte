@@ -17,6 +17,40 @@ class InitialScanController extends GetxController {
 
   Timer? _progressTimer;
 
+  /// Rough seconds-remaining estimate derived from current progress, shown on
+  /// the live-scan screen. Returns 0 once complete.
+  int get estimatedSecondsLeft {
+    if (isComplete) return 0;
+    return ((1 - progress) * 75).round().clamp(1, 99);
+  }
+
+  /// Friendly label for the stage the scan is currently in (drives the stepper
+  /// and the headline). 0 = Scan Start … 4 = Complete.
+  int get stageIndex {
+    if (isComplete) return 4;
+    if (progress >= 0.75) return 3;
+    if (progress >= 0.5) return 2;
+    if (progress >= 0.25) return 1;
+    return 0;
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // The user arrives here by tapping "Start Smart Scan" / "AI Cleanup", so
+    // begin scanning immediately unless a scan already ran.
+    if (!isScanning && !isComplete) {
+      startScan();
+    }
+  }
+
+  void stopScan() {
+    _progressTimer?.cancel();
+    isScanning = false;
+    status = 'Scan stopped';
+    update();
+  }
+
   @override
   void onClose() {
     _progressTimer?.cancel();
@@ -72,7 +106,7 @@ class InitialScanController extends GetxController {
       videoCount = await _countAssets(videoPaths);
       progress = 1;
       isComplete = true;
-      status = 'Scan complete';
+      status = 'Scan Complete';
     } on InitialScanException catch (error) {
       errorMessage = error.message;
       status = 'Scan paused';

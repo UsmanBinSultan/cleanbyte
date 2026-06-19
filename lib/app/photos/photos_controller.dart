@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:sift/core/utils/formatters.dart';
@@ -31,7 +32,7 @@ enum MediaCleanupMode {
       return 'screenshots'.tr;
     }
     if (isDuplicates) {
-      return 'duplicates'.tr;
+      return 'Similar Photos';
     }
     if (isInvisible) {
       return 'invisible photos'.tr;
@@ -116,8 +117,32 @@ enum MediaCleanupMode {
   }
 }
 
+/// A set of near-identical photos. [keeper] is the copy that is always kept
+/// (the "best"); [extras] are the redundant copies that can be cleaned.
+class DuplicatePhotoGroup {
+  const DuplicatePhotoGroup({
+    required this.key,
+    required this.keeper,
+    required this.extras,
+    required this.label,
+  });
+
+  final String key;
+  final AssetEntity keeper;
+  final List<AssetEntity> extras;
+  final String label;
+
+  List<AssetEntity> get all => [keeper, ...extras];
+  int get photoCount => extras.length + 1;
+}
+
+/// Sort order for the Large Videos list.
+enum VideoSort { largest, oldest, recent }
+
 class SimilarPhotosController extends GetxController {
   static SimilarPhotosController instance = Get.find();
+
+  VideoSort videoSort = VideoSort.largest;
   static final _blurredPhotosScan = _BlurredPhotosScanSnapshot();
 
   SimilarPhotosController({this.mode = MediaCleanupMode.photos});
@@ -130,6 +155,15 @@ class SimilarPhotosController extends GetxController {
   bool isDeleting = false;
   bool hasAccess = false;
   int totalCount = 0;
+
+  /// Whole-device used storage, for the screenshots "% of storage" card.
+  static const _storageChannel = MethodChannel('sift/storage');
+  int deviceUsedBytes = 0;
+
+  /// Screenshots as a fraction of total used device storage (0–1).
+  double get screenshotsStorageFraction => deviceUsedBytes <= 0
+      ? 0
+      : (screenshotsBytes / deviceUsedBytes).clamp(0, 1).toDouble();
   int swipeDeletedCount = 0;
   int swipeSavedBytes = 0;
   AssetEntity? reviewAsset;
@@ -169,6 +203,10 @@ class SimilarPhotosController extends GetxController {
       ),
     );
     hasAccess = permission.hasAccess;
+
+    if (mode.isScreenshots) {
+      await _loadDeviceStorage();
+    }
 
     if (!hasAccess) {
       assets = <AssetEntity>[];
@@ -220,6 +258,13 @@ class SimilarPhotosController extends GetxController {
       }
       if (mode.isVideos) {
         await _sortVideosBySize();
+      } else if (mode.isScreenshots) {
+        // Measure the loaded screenshots so the header/footer can show sizes.
+        final entries = await _measureAssets(assets);
+        assetByteSizes = Map<String, int>.fromEntries(entries);
+        duplicateGroupCounts = <String, int>{};
+        _assetGroupKey = <String, String>{};
+        blurResults = <String, BlurScanResult>{};
       } else if (!mode.isLargeFiles && !mode.isDuplicates && !mode.isBlurred) {
         assetByteSizes = <String, int>{};
         duplicateGroupCounts = <String, int>{};
@@ -229,17 +274,186 @@ class SimilarPhotosController extends GetxController {
     }
 
     selectedIds.removeWhere((id) => assets.every((asset) => asset.id != id));
+    // Similar Photos pre-selects every deletable extra (keeping the best of
+    // each group) so the user can review and confirm in one tap.
+    if (mode.isDuplicates && selectedIds.isEmpty) {
+      selectedIds.addAll(_loadedDuplicateExtras());
+    }
     isLoading = false;
     update();
   }
 
   bool isSelected(AssetEntity asset) => selectedIds.contains(asset.id);
 
+  /// Structured duplicate groups (keeper + deletable extras) for the grouped
+  /// "Similar Photos" layout. The first copy loaded in each group is the keeper.
+  List<DuplicatePhotoGroup> get duplicateGroups {
+    if (!mode.isDuplicates) {
+      return const [];
+    }
+    final byKey = <String, List<AssetEntity>>{};
+    for (final asset in assets) {
+      final key = _assetGroupKey[asset.id];
+      if (key == null) {
+        continue;
+      }
+      byKey.putIfAbsent(key, () => <AssetEntity>[]).add(asset);
+    }
+    final groups = <DuplicatePhotoGroup>[];
+    byKey.forEach((key, members) {
+      if (members.length < 2) {
+        return;
+      }
+      groups.add(
+        DuplicatePhotoGroup(
+          key: key,
+          keeper: members.first,
+          extras: members.sublist(1),
+          label: formatShortDate(
+            members.first.createDateTime,
+            recentBefore2000: true,
+          ),
+        ),
+      );
+    });
+    return groups;
+  }
+
+  /// Total bytes that can be reclaimed from a group's deletable extras.
+  int groupExtraBytes(DuplicatePhotoGroup group) =>
+      group.extras.fold(0, (sum, a) => sum + (assetByteSizes[a.id] ?? 0));
+
+  /// Number of deletable copies across all duplicate groups.
+  int get deletableDuplicateCount =>
+      duplicateGroups.fold(0, (sum, g) => sum + g.extras.length);
+
+  /// Bytes selected for deletion (used by the grouped delete button).
+  int get selectedBytes =>
+      selectedIds.fold(0, (sum, id) => sum + (assetByteSizes[id] ?? 0));
+
+  /// True for the keeper (first/best) copy of [group]; it can't be deleted.
+  bool isKeeper(DuplicatePhotoGroup group, AssetEntity asset) =>
+      group.keeper.id == asset.id;
+
+  /// Select or deselect every deletable extra in [group] at once.
+  void setGroupExtrasSelected(DuplicatePhotoGroup group, bool selected) {
+    for (final extra in group.extras) {
+      if (selected) {
+        selectedIds.add(extra.id);
+      } else {
+        selectedIds.remove(extra.id);
+      }
+    }
+    update();
+  }
+
+  /// Total bytes across all loaded videos (for the Large Videos stat cards).
+  int get totalVideoBytes =>
+      assetByteSizes.values.fold(0, (sum, value) => sum + value);
+
+  /// Re-order the Large Videos list.
+  void setVideoSort(VideoSort sort) {
+    if (videoSort == sort) {
+      return;
+    }
+    videoSort = sort;
+    assets = [...assets]
+      ..sort((a, b) {
+        switch (sort) {
+          case VideoSort.largest:
+            return (assetByteSizes[b.id] ?? 0).compareTo(
+              assetByteSizes[a.id] ?? 0,
+            );
+          case VideoSort.oldest:
+            return a.createDateTime.compareTo(b.createDateTime);
+          case VideoSort.recent:
+            return b.createDateTime.compareTo(a.createDateTime);
+        }
+      });
+    update();
+  }
+
+  // --- Screenshots -----------------------------------------------------------
+  /// Active year filter: null = all, 0 = "Older", otherwise a specific year.
+  int? screenshotYear;
+
+  DateTime get _oneYearAgo =>
+      DateTime.now().subtract(const Duration(days: 365));
+
+  int get screenshotsBytes =>
+      assetByteSizes.values.fold(0, (sum, value) => sum + value);
+
+  Future<void> _loadDeviceStorage() async {
+    try {
+      final result = await _storageChannel.invokeMapMethod<String, dynamic>(
+        'getStorageStats',
+      );
+      final total = (result?['totalBytes'] as num?)?.toInt() ?? 0;
+      final free = (result?['freeBytes'] as num?)?.toInt() ?? 0;
+      deviceUsedBytes = (total - free).clamp(0, total);
+    } catch (_) {
+      deviceUsedBytes = 0;
+    }
+  }
+
+  int get screenshotsOlderThanYear => assets
+      .where(
+        (a) =>
+            a.createDateTime.year > 1990 &&
+            a.createDateTime.isBefore(_oneYearAgo),
+      )
+      .length;
+
+  /// The 3 most recent screenshot years, used for the filter chips.
+  List<int> get screenshotYears {
+    final years =
+        assets
+            .map((a) => a.createDateTime.year)
+            .where((y) => y > 1990)
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
+    return years.take(3).toList();
+  }
+
+  List<AssetEntity> get filteredScreenshots {
+    final year = screenshotYear;
+    if (year == null) {
+      return assets;
+    }
+    if (year == 0) {
+      final recent = screenshotYears.toSet();
+      return assets
+          .where((a) => !recent.contains(a.createDateTime.year))
+          .toList();
+    }
+    return assets.where((a) => a.createDateTime.year == year).toList();
+  }
+
+  void setScreenshotYear(int? year) {
+    screenshotYear = year;
+    update();
+  }
+
+  /// Select every screenshot older than a year (the "Review" suggestion).
+  void selectOldScreenshots() {
+    for (final a in assets) {
+      if (a.createDateTime.year > 1990 &&
+          a.createDateTime.isBefore(_oneYearAgo)) {
+        selectedIds.add(a.id);
+      }
+    }
+    update();
+  }
+
   /// Caption shown under a grid tile: size, duplicate count, blur score, or
   /// capture date depending on the active mode.
   String assetDetailLabel(AssetEntity asset) {
     if (mode.isLargeFiles || mode.isVideos) {
-      return formatBytes(assetByteSizes[asset.id], emptyLabel: 'Size unavailable');
+      return formatBytes(
+        assetByteSizes[asset.id],
+        emptyLabel: 'Size unavailable',
+      );
     }
     if (mode.isDuplicates) {
       final count = duplicateGroupCounts[asset.id] ?? 2;
@@ -277,6 +491,24 @@ class SimilarPhotosController extends GetxController {
 
   void closeAssetReview() {
     reviewAsset = null;
+    update();
+  }
+
+  /// Keep the current photo and move the review deck to the next one.
+  void keepReviewAsset() => _advanceReview();
+
+  /// Skip the current photo (undecided) and move to the next one.
+  void skipReviewAsset() => _advanceReview();
+
+  void _advanceReview() {
+    final asset = reviewAsset;
+    if (asset == null) {
+      return;
+    }
+    final index = assets.indexWhere((candidate) => candidate.id == asset.id);
+    reviewAsset = (index >= 0 && index + 1 < assets.length)
+        ? assets[index + 1]
+        : null;
     update();
   }
 
@@ -352,6 +584,44 @@ class SimilarPhotosController extends GetxController {
     return false;
   }
 
+  /// After a deletion in duplicates mode, recount how many copies remain in
+  /// each group. Surviving photos get the updated count (so "3 duplicates"
+  /// becomes "2 duplicates" once one copy is removed), and any photo whose
+  /// group is now a single copy is dropped from the screen entirely — it is no
+  /// longer a duplicate. Without this, deleted copies kept inflating the count
+  /// and lone survivors lingered as fake "duplicates".
+  void _recomputeDuplicateGroups() {
+    if (!mode.isDuplicates) {
+      return;
+    }
+    final remainingByKey = <String, int>{};
+    for (final asset in assets) {
+      final key = _assetGroupKey[asset.id];
+      if (key == null) {
+        continue;
+      }
+      remainingByKey.update(key, (value) => value + 1, ifAbsent: () => 1);
+    }
+
+    final survivors = <AssetEntity>[];
+    for (final asset in assets) {
+      final key = _assetGroupKey[asset.id];
+      final groupSize = key == null ? 0 : (remainingByKey[key] ?? 0);
+      if (groupSize >= 2) {
+        survivors.add(asset);
+        duplicateGroupCounts[asset.id] = groupSize;
+      } else {
+        duplicateGroupCounts.remove(asset.id);
+        _assetGroupKey.remove(asset.id);
+        assetByteSizes.remove(asset.id);
+        selectedIds.remove(asset.id);
+      }
+    }
+
+    assets = survivors;
+    totalCount = survivors.length;
+  }
+
   Future<bool> deleteReviewAsset() async {
     final asset = reviewAsset;
     if (asset == null || isDeleting) {
@@ -372,6 +642,14 @@ class SimilarPhotosController extends GetxController {
       await bin.discardBackups([asset.id]);
     }
     if (deleted) {
+      final currentIndex = assets.indexWhere((c) => c.id == asset.id);
+      // Pick the photo that should be reviewed next BEFORE removing the current
+      // one: prefer the following photo, fall back to the previous one.
+      final AssetEntity? nextAsset =
+          (currentIndex >= 0 && currentIndex + 1 < assets.length)
+          ? assets[currentIndex + 1]
+          : (currentIndex - 1 >= 0 ? assets[currentIndex - 1] : null);
+
       assets = assets
           .where((candidate) => candidate.id != asset.id)
           .toList(growable: false);
@@ -389,7 +667,12 @@ class SimilarPhotosController extends GetxController {
       }
       swipeDeletedCount += 1;
       swipeSavedBytes += byteSize;
-      reviewAsset = null;
+      // Keep reviewing the next photo (deck mode) instead of closing.
+      reviewAsset =
+          (nextAsset != null && assets.any((a) => a.id == nextAsset.id))
+          ? nextAsset
+          : (assets.isEmpty ? null : assets.first);
+      _recomputeDuplicateGroups();
     }
 
     isDeleting = false;
@@ -470,6 +753,8 @@ class SimilarPhotosController extends GetxController {
     if (totalCount < 0) {
       totalCount = 0;
     }
+    // Drop now-unique survivors and refresh remaining duplicate counts.
+    _recomputeDuplicateGroups();
     selectedIds.clear();
     isDeleting = false;
     update();
@@ -482,6 +767,36 @@ class SimilarPhotosController extends GetxController {
     }
 
     return deletedSet.length;
+  }
+
+  /// Deletes a single asset (used by the per-row Delete button on the video
+  /// list). Backs it up to the recycle bin first, like [deleteSelected].
+  Future<bool> deleteAsset(AssetEntity asset) async {
+    if (isDeleting) {
+      return false;
+    }
+    isDeleting = true;
+    update();
+
+    final bin = Get.find<RecycleBinService>();
+    await bin.backupAssets([asset]);
+    final deletedIds = await PhotoManager.editor.deleteWithIds([asset.id]);
+    final removed = deletedIds.contains(asset.id);
+    if (!removed) {
+      await bin.discardBackups([asset.id]);
+    } else {
+      assets = assets.where((a) => a.id != asset.id).toList();
+      assetByteSizes.remove(asset.id);
+      duplicateGroupCounts.remove(asset.id);
+      _assetGroupKey.remove(asset.id);
+      blurResults.remove(asset.id);
+      selectedIds.remove(asset.id);
+      totalCount = totalCount > 0 ? totalCount - 1 : 0;
+    }
+
+    isDeleting = false;
+    update();
+    return removed;
   }
 
   Future<void> openSettings() => PhotoManager.openSetting();

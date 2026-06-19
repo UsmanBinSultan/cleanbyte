@@ -12,7 +12,10 @@ class SplashController extends GetxController {
       if (Get.currentRoute == AppRoutes.splash) {
         final hasSeenOnboarding = await AppFlags.hasSeenOnboarding();
         Get.offNamed(
-          hasSeenOnboarding ? AppRoutes.homeDashboard : AppRoutes.onboarding,
+          hasSeenOnboarding ? 
+          // AppRoutes.homeDashboard 
+          AppRoutes.onboarding 
+          : AppRoutes.onboarding,
         );
       }
     });

@@ -15,9 +15,7 @@ class DuplicateContactsView extends StatelessWidget {
     return GetBuilder<DuplicateContactsController>(
       builder: (controller) {
         return Scaffold(
-          backgroundColor: Theme.of(context).brightness == Brightness.light
-              ? const Color(0xFFFFFBF5)
-              : const Color(0xFF071120),
+          backgroundColor: AppColors.pageBackground(context),
           body: SafeArea(
             child: Column(
               children: [
@@ -72,12 +70,12 @@ class _ContactsBody extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF18D0B8),
+      color: AppColors.accent,
       backgroundColor: AppColors.surface(context),
       onRefresh: controller.loadContacts,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
         itemBuilder: (context, index) {
           if (index == 0) {
             return _ContactsSummary(controller: controller);
@@ -107,11 +105,12 @@ class _ContactsSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${controller.duplicateCount} duplicate contacts',
+            '${controller.duplicateCount} Duplicated Contacts',
             style: TextStyle(
               color: AppColors.textPrimary(context),
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
+              fontSize: 24,
+              letterSpacing: -0.8,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
@@ -119,11 +118,86 @@ class _ContactsSummary extends StatelessWidget {
             '${controller.groups.length} matching groups ready to review',
             style: TextStyle(
               color: AppColors.textMuted(context),
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _ContactStatTile(
+                value: controller.duplicateCount.toString(),
+                label: 'Total Dupes',
+                accent: AppColors.accent,
+                tint: AppColors.tintTeal,
+              ),
+              const SizedBox(width: 12),
+              _ContactStatTile(
+                value: controller.selectedIds.length.toString(),
+                label: 'Selected',
+                accent: AppColors.iconBlue,
+                tint: AppColors.tintBlue,
+              ),
+              const SizedBox(width: 12),
+              _ContactStatTile(
+                value: controller.groups.length.toString(),
+                label: 'Groups',
+                accent: AppColors.accentDeep,
+                tint: AppColors.tintMint,
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _ContactStatTile extends StatelessWidget {
+  const _ContactStatTile({
+    required this.value,
+    required this.label,
+    required this.accent,
+    required this.tint,
+  });
+
+  final String value;
+  final String label;
+  final Color accent;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: AppColors.iconChipBg(context, accent, tint),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: accent,
+                fontSize: 20,
+                letterSpacing: -0.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textMuted(context),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -142,23 +216,51 @@ class _ContactGroupCard extends StatelessWidget {
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderFor(context)),
+        boxShadow: AppColors.isLight(context)
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
-            child: Text(
-              '${group.contacts.length} matches - ${group.label}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.isLight(context)
-                    ? const Color(0xFF0E8F80)
-                    : const Color(0xFF18D0B8),
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 11),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint(context),
+              border: Border(
+                bottom: BorderSide(color: AppColors.borderFor(context)),
               ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${group.contacts.length} matches · ${group.label}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           for (final contact in group.contacts)
@@ -198,20 +300,22 @@ class _ContactRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 9, 14, 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.isLight(context)
-                  ? AppColors.lightSurfaceTint
-                  : const Color(0xFF172133),
+              radius: 20,
+              backgroundColor: AppColors.iconChipBg(
+                context,
+                AppColors.accent,
+                AppColors.tintTeal,
+              ),
               child: Text(
                 name.characters.first.toUpperCase(),
-                style: TextStyle(
-                  color: AppColors.textPrimary(context),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
+                style: const TextStyle(
+                  color: AppColors.accentDeep,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -226,8 +330,8 @@ class _ContactRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: AppColors.textPrimary(context),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -237,8 +341,8 @@ class _ContactRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: AppColors.textMuted(context),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -264,14 +368,14 @@ class _ContactSelectionMark extends StatelessWidget {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFF18D0B8) : Colors.transparent,
+        color: selected ? AppColors.accent : Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? const Color(0xFF18D0B8) : const Color(0xFF697385),
+          color: selected ? AppColors.accent : AppColors.borderFor(context),
         ),
       ),
       child: selected
-          ? const Icon(LucideIcons.check, size: 14, color: Color(0xFF062322))
+          ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
           : null,
     );
   }
@@ -304,7 +408,7 @@ class _CenteredContactState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: const Color(0xFF18D0B8), size: 42),
+            Icon(icon, color: AppColors.accent, size: 42),
             const SizedBox(height: 18),
             Text(
               title,
@@ -312,7 +416,7 @@ class _CenteredContactState extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.textPrimary(context),
                 fontSize: 20,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
@@ -323,33 +427,38 @@ class _CenteredContactState extends StatelessWidget {
                 color: AppColors.textMuted(context),
                 fontSize: 13,
                 height: 1.35,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 22),
-            TextButton(
-              onPressed: onPrimary,
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF18D0B8),
-                foregroundColor: const Color(0xFF062322),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w900),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: AppColors.accentGradient,
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Text(primaryLabel),
+              child: TextButton(
+                onPressed: onPrimary,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                child: Text(primaryLabel),
+              ),
             ),
             if (secondaryLabel != null && onSecondary != null) ...[
               const SizedBox(height: 10),
               TextButton(
                 onPressed: onSecondary,
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF18D0B8),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                  foregroundColor: AppColors.accent,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 child: Text(secondaryLabel!),
               ),
@@ -377,9 +486,9 @@ class _ContactsHeader extends StatelessWidget {
       trailing: TextButton(
         onPressed: contacts.isEmpty ? null : controller.toggleSelectAll,
         style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF18D0B8),
-          disabledForegroundColor: const Color(0xFF4A5362),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          foregroundColor: AppColors.accent,
+          disabledForegroundColor: AppColors.textFaint(context),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
         child: Text(allSelected ? 'clear'.tr : 'select_all'.tr),
       ),
@@ -424,18 +533,16 @@ class _ContactsBottomAction extends StatelessWidget {
                 : 'Delete selected ($selectedCount)',
           ),
           style: TextButton.styleFrom(
-            disabledBackgroundColor: AppColors.isLight(context)
-                ? AppColors.lightBorder
-                : const Color(0xFF111929),
-            disabledForegroundColor: const Color(0xFF586274),
-            backgroundColor: const Color(0xFFFF7A5F),
+            disabledBackgroundColor: AppColors.surfaceTint(context),
+            disabledForegroundColor: AppColors.textFaint(context),
+            backgroundColor: AppColors.danger,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             textStyle: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
@@ -446,14 +553,12 @@ class _ContactsBottomAction extends StatelessWidget {
   Future<void> _confirmAndDelete(DuplicateContactsController controller) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        backgroundColor: const Color(0xFF111929),
         title: const Text(
           'Delete selected?',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
         content: Text(
           'This will delete ${controller.selectedIds.length} selected contacts from your phone.',
-          style: const TextStyle(color: Color(0xFFC2CAD6)),
         ),
         actions: [
           TextButton(
@@ -462,9 +567,7 @@ class _ContactsBottomAction extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFFF7A5F),
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: const Text('Delete'),
           ),
         ],
@@ -482,9 +585,6 @@ class _ContactsBottomAction extends StatelessWidget {
           ? 'No contacts were removed.'
           : 'Your contacts have been updated.',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF111929),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
     );
   }
 }

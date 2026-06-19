@@ -18,11 +18,11 @@ void main() {
 class CleanByteApp extends StatelessWidget {
   const CleanByteApp({super.key});
 
-     @override
+  @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'app title'.tr,
+      title: 'clean byte',
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
       translations: AppTranslations(),
@@ -31,22 +31,22 @@ class CleanByteApp extends StatelessWidget {
       themeMode: Get.find<SettingsController>().themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFFFFBF5),
-        fontFamily: 'SF Pro Text',
+        scaffoldBackgroundColor: AppColors.lightBg,
+        fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF14B8A6),
+          seedColor: AppColors.accent,
           brightness: Brightness.light,
-          surface: const Color(0xFFFFFCF7),
+          surface: AppColors.lightSurface,
         ),
         textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: const Color(0xFF17201B),
-          displayColor: const Color(0xFF17201B),
+          bodyColor: AppColors.lightFg,
+          displayColor: AppColors.lightFg,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.bgDeep,
-        fontFamily: 'SF Pro Text',
+        fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.accent,
           brightness: Brightness.dark,

@@ -8,11 +8,15 @@ import 'package:sift/app/routes/app_routes.dart';
 /// secondary screens that are reached from it (e.g. AI categories).
 ///
 /// [activeIndex] highlights the current destination:
-/// 0 = home, 1 = image categories, 2 = whatsapp cleaner, 3 = settings.
+/// 0 = home, 1 = image categories, 2 = files, 3 = whatsapp cleaner,
+/// 4 = settings. The previous four-tab home dashboard still passes 3 for
+/// settings, so that value is normalized in the widget below.
 class SiftBottomNavBar extends StatelessWidget {
   const SiftBottomNavBar({super.key, required this.activeIndex});
 
   final int activeIndex;
+
+  int get _normalizedActiveIndex => activeIndex == 4 ? 4 : activeIndex;
 
   void _onTap(int index) {
     if (index == activeIndex) {
@@ -26,9 +30,12 @@ class SiftBottomNavBar extends StatelessWidget {
         Get.toNamed(AppRoutes.aiCategories, arguments: {'fromNav': true});
         break;
       case 2:
-        Get.toNamed(AppRoutes.whatsappCleaner, arguments: {'fromNav': true});
+        Get.toNamed(AppRoutes.largeFiles, arguments: {'fromNav': true});
         break;
       case 3:
+        Get.toNamed(AppRoutes.whatsappCleaner, arguments: {'fromNav': true});
+        break;
+      case 4:
         _backToHomeTab(3);
         break;
     }
@@ -45,7 +52,7 @@ class SiftBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
+      height: 85,
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.light
             ? Colors.white
@@ -53,7 +60,7 @@ class SiftBottomNavBar extends StatelessWidget {
         border: Border(
           top: BorderSide(
             color: Theme.of(context).brightness == Brightness.light
-                ? const Color(0xFFE7E2D6)
+                ? const Color(0xFFE2E8F0)
                 : const Color(0xFF121C2C),
           ),
         ),
@@ -72,26 +79,32 @@ class SiftBottomNavBar extends StatelessWidget {
           _NavItem(
             label: 'home'.tr,
             icon: LucideIcons.home,
-            active: activeIndex == 0,
+            active: _normalizedActiveIndex == 0,
             onTap: () => _onTap(0),
           ),
           _NavItem(
             label: 'Ai Categories'.tr,
             icon: LucideIcons.sparkles,
-            active: activeIndex == 1,
+            active: _normalizedActiveIndex == 1,
             onTap: () => _onTap(1),
+          ),
+          _NavItem(
+            label: 'Files'.tr,
+            icon: LucideIcons.folder,
+            active: _normalizedActiveIndex == 2,
+            onTap: () => _onTap(2),
           ),
           _NavItem(
             label: 'wa clean'.tr,
             icon: LucideIcons.messageCircle,
-            active: activeIndex == 2,
-            onTap: () => _onTap(2),
+            active: _normalizedActiveIndex == 3,
+            onTap: () => _onTap(3),
           ),
           _NavItem(
             label: 'settings'.tr,
             icon: LucideIcons.settings,
-            active: activeIndex == 3,
-            onTap: () => _onTap(3),
+            active: _normalizedActiveIndex == 4,
+            onTap: () => _onTap(4),
           ),
         ],
       ),
@@ -114,7 +127,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? const Color(0xFF18D0B8) : const Color(0xFF697385);
+    final color = active ? const Color(0xFF1DC8A8) : const Color(0xFF94A3B8);
 
     return Expanded(
       child: InkWell(
@@ -123,13 +136,15 @@ class _NavItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 22, color: color),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontSize: 10,
-                fontWeight: FontWeight.w900,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ],

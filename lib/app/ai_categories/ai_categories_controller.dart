@@ -101,11 +101,30 @@ class AiCategoriesController extends GetxController {
   bool isLoading = true;
   bool isScanning = false;
   bool hasAccess = false;
+  bool isGridView = false;
   String? errorMessage;
   int scannedCount = 0;
   int totalToScan = 0;
   PhotoCategory selectedCategory = PhotoCategory.all;
   List<CategorizedPhoto> photos = <CategorizedPhoto>[];
+
+  /// Highest photo count across detected categories — used to scale the
+  /// per-category progress bars on the AI Categories list.
+  int get maxCategoryCount {
+    var max = 0;
+    for (final category in visibleCategories) {
+      if (category == PhotoCategory.all) continue;
+      final count = countFor(category);
+      if (count > max) max = count;
+    }
+    return max;
+  }
+
+  void setGridView(bool grid) {
+    if (isGridView == grid) return;
+    isGridView = grid;
+    update();
+  }
 
   @override
   void onInit() {

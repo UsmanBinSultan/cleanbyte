@@ -4,6 +4,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+/// User-toggleable battery optimisations shown on the Battery screen.
+///
+/// These are preferences the user opts into (not live OS controls), so the
+/// per-item minute savings are indicative estimates used for the UI summary.
+enum BatteryOptimisation {
+  // brightness('Reduce screen brightness', 'Auto at 70% peak', 45),
+  // backgroundData('Disable background data', 'For non-essential apps', 30),
+  location('Limit location services', 'Only while using', 60),
+  
+   notifications('Reduce notifications', 'Group non-priority', 20);
+
+  const BatteryOptimisation(this.title, this.subtitle, this.savingMinutes);
+
+  final String title;
+  final String subtitle;
+  final int savingMinutes;
+}
+
 class BatterySnapshot {
   const BatterySnapshot({
     required this.level,
@@ -58,6 +76,58 @@ class BatteryManagerController extends GetxController
   BatterySnapshot battery = const BatterySnapshot.empty();
   Timer? _refreshTimer;
   bool _isReadingBattery = false;
+
+  // Optimisation preferences. One is enabled by default so the summary reads
+  // "1 of 4 optimisations on", matching the design's resting state.
+  final Map<BatteryOptimisation, bool> _optimisations = {
+    for (final option in BatteryOptimisation.values)
+      option: option == BatteryOptimisation.location,
+  };
+
+  List<BatteryOptimisation> get optimisations => BatteryOptimisation.values;
+
+  bool isOptimisationOn(BatteryOptimisation option) =>
+      _optimisations[option] ?? false;
+
+  int get activeOptimisationCount =>
+      _optimisations.values.where((on) => on).length;
+
+  int get estimatedSavingMinutes => BatteryOptimisation.values
+      .where(isOptimisationOn)
+      .fold(0, (sum, option) => sum + option.savingMinutes);
+
+  int get maxSavingMinutes => BatteryOptimisation.values.fold(
+    0,
+    (sum, option) => sum + option.savingMinutes,
+  );
+
+  void toggleOptimisation(BatteryOptimisation option) {
+    _optimisations[option] = !(_optimisations[option] ?? false);
+    update();
+  }
+
+  void applyAllOptimisations() {
+    for (final option in BatteryOptimisation.values) {
+      _optimisations[option] = true;
+    }
+    update();
+  }
+
+  /// `45 min`, `1 hr`, or `2h 35m`.
+  String formatSavingMinutes(int minutes) {
+    if (minutes <= 0) {
+      return '0 min';
+    }
+    if (minutes < 60) {
+      return '$minutes min';
+    }
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    if (mins == 0) {
+      return '$hours hr';
+    }
+    return '${hours}h ${mins}m';
+  }
 
   @override
   void onInit() {

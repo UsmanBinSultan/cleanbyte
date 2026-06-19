@@ -74,31 +74,37 @@ class WhatsappCleanerController extends GetxController {
     return true;
   }
 
-  static void updateSummaryAfterDelete(
+  /// Syncs the summary's count/bytes for [type] with a fresh detail-screen
+  /// scan, so the home cards never drift from what the type screen shows.
+  static void syncSummaryForType(
     WhatsappMediaType type,
-    List<WhatsappMediaItem> deletedItems,
+    List<WhatsappMediaItem> items,
   ) {
+    final bytes = items.fold<int>(0, (total, item) => total + item.size);
+    final count = items.length;
+
     final cache = _summaryCache;
-    if (cache == null || deletedItems.isEmpty) {
-      return;
+    if (cache != null) {
+      final nextBytes = Map<WhatsappMediaType, int>.from(cache.bytesByType)
+        ..[type] = bytes;
+      final nextCount = Map<WhatsappMediaType, int>.from(cache.countByType)
+        ..[type] = count;
+      _summaryCache = _WhatsappSummaryCache(
+        hasAccess: cache.hasAccess,
+        bytesByType: nextBytes,
+        countByType: nextCount,
+      );
     }
 
-    final removedBytes = deletedItems.fold<int>(
-      0,
-      (total, item) => total + item.size,
-    );
-    final bytesByType = Map<WhatsappMediaType, int>.from(cache.bytesByType);
-    final countByType = Map<WhatsappMediaType, int>.from(cache.countByType);
-    final nextBytes = (bytesByType[type] ?? 0) - removedBytes;
-    final nextCount = (countByType[type] ?? 0) - deletedItems.length;
-    bytesByType[type] = nextBytes < 0 ? 0 : nextBytes;
-    countByType[type] = nextCount < 0 ? 0 : nextCount;
-    _summaryCache = _WhatsappSummaryCache(
-      hasAccess: cache.hasAccess,
-      bytesByType: bytesByType,
-      countByType: countByType,
-    );
+    // Update the live home controller (if it is in memory) and repaint it.
+    if (Get.isRegistered<WhatsappCleanerController>()) {
+      final controller = Get.find<WhatsappCleanerController>();
+      controller.bytesByType[type] = bytes;
+      controller.countByType[type] = count;
+      controller.update();
+    }
   }
+
 }
 
 class _WhatsappSummaryCache {
@@ -254,6 +260,8 @@ class WhatsappMediaController extends GetxController {
         items: items,
         errorMessage: null,
       );
+      // Keep the home summary in step with this fresh scan.
+      WhatsappCleanerController.syncSummaryForType(type, items);
     } catch (_) {
       items = <WhatsappMediaItem>[];
       selectedPaths.clear();
@@ -317,7 +325,6 @@ class WhatsappMediaController extends GetxController {
     update();
 
     var deleted = 0;
-    final deletedItems = <WhatsappMediaItem>[];
     final paths = selectedPaths.toList(growable: false);
     for (final path in paths) {
       try {
@@ -327,12 +334,6 @@ class WhatsappMediaController extends GetxController {
           await Get.find<RecycleBinService>().backupFile(path);
           await file.delete();
           deleted++;
-          for (final item in items) {
-            if (item.path == path) {
-              deletedItems.add(item);
-              break;
-            }
-          }
         }
       } catch (_) {
         // Keep deleting the rest if one WhatsApp file is protected.
@@ -345,7 +346,9 @@ class WhatsappMediaController extends GetxController {
       items: items,
       errorMessage: errorMessage,
     );
-    WhatsappCleanerController.updateSummaryAfterDelete(type, deletedItems);
+    // Sync the home summary (cache + live controller) to the post-delete list
+    // so the cards immediately reflect the new count/size.
+    WhatsappCleanerController.syncSummaryForType(type, items);
     selectedPaths.clear();
     isDeleting = false;
     update();

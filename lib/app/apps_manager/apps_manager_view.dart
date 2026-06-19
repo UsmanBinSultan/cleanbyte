@@ -65,10 +65,8 @@ class _AppsBody extends StatelessWidget {
     final apps = controller.sortedApps;
 
     return RefreshIndicator(
-      color: const Color(0xFF18D0B8),
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.white
-          : const Color(0xFF111929),
+      color: AppColors.accent,
+      backgroundColor: AppColors.surface(context),
       onRefresh: controller.loadApps,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -103,9 +101,7 @@ class _AppsBody extends StatelessWidget {
             const SizedBox(height: 18),
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? AppColors.surface(context)
-                    : AppColors.surface(context),
+                color: AppColors.surface(context),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: AppColors.borderFor(context)),
               ),
@@ -130,15 +126,13 @@ class _UsageAccessBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.surface(context)
-            : AppColors.surface(context),
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderFor(context)),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.clock3, color: Color(0xFFFFD34D), size: 18),
+          const Icon(LucideIcons.clock3, color: AppColors.iconAmber, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -154,7 +148,7 @@ class _UsageAccessBanner extends StatelessWidget {
           TextButton(
             onPressed: controller.openUsageAccessSettings,
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF18D0B8),
+              foregroundColor: AppColors.accent,
               textStyle: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
@@ -179,9 +173,7 @@ class _SortTabs extends StatelessWidget {
       height: 42,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.surface(context)
-            : AppColors.surface(context),
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderFor(context)),
       ),

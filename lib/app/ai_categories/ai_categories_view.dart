@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -29,10 +27,15 @@ class AiCategoriesView extends StatelessWidget {
             bottom: false,
             child: Column(
               children: [
-                _Header(
+                SiftTopAppBar(
                   title: 'ai_categories'.tr,
-                  trailing: _ScanAgainAction(controller: controller),
+                  subtitle: controller.isScanning
+                      ? '${controller.scannedCount} of ${controller.totalToScan} scanned'
+                      : '${controller.totalPhotos} photos · last scanned today',
                   showBack: !fromNav,
+                  trailing: controller.hasAccess && controller.totalPhotos > 0
+                      ? _ViewToggle(controller: controller)
+                      : null,
                 ),
                 Expanded(child: _CategoriesBody(controller: controller)),
               ],
@@ -41,6 +44,79 @@ class AiCategoriesView extends StatelessWidget {
           bottomNavigationBar: const SiftBottomNavBar(activeIndex: 1),
         );
       },
+    );
+  }
+}
+
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.controller});
+
+  final AiCategoriesController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _ToggleButton(
+            icon: LucideIcons.list,
+            active: !controller.isGridView,
+            onTap: () => controller.setGridView(false),
+          ),
+          _ToggleButton(
+            icon: LucideIcons.layoutGrid,
+            active: controller.isGridView,
+            onTap: () => controller.setGridView(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToggleButton extends StatelessWidget {
+  const _ToggleButton({
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(9),
+      child: Container(
+        width: 30,
+        height: 28,
+        decoration: BoxDecoration(
+          color: active ? AppColors.surface(context) : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          boxShadow: active && AppColors.isLight(context)
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          icon,
+          size: 15,
+          color: active ? AppColors.accent : AppColors.textMuted(context),
+        ),
+      ),
     );
   }
 }
@@ -70,31 +146,366 @@ class _CategoriesBody extends StatelessWidget {
       );
     }
 
+    final detected = controller.visibleCategories
+        .where((c) => c != PhotoCategory.all)
+        .toList();
+
+    if (detected.isEmpty) {
+      return CenteredStateView(
+        icon: LucideIcons.sparkles,
+        title: 'No categories yet',
+        body: 'Scan your library to sort photos into smart categories.',
+        primaryLabel: 'Scan now',
+        onPrimary: () => controller.scanLibrary(force: true),
+      );
+    }
+
+    final featured = [PhotoCategory.all, ...detected.take(2)];
+
     return RefreshIndicator(
-      color: const Color(0xFF18D0B8),
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.white
-          : const Color(0xFF111929),
+      color: AppColors.accent,
+      backgroundColor: AppColors.surface(context),
       onRefresh: () => controller.scanLibrary(force: true),
-      child: SingleChildScrollView(
+      child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+        children: [
+          SizedBox(
+            height: 96,
+            child: Row(
+              children: [
+                for (var i = 0; i < featured.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  Expanded(
+                    child: _FeaturedCard(
+                      controller: controller,
+                      category: featured[i],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'ALL CATEGORIES',
+            style: TextStyle(
+              color: AppColors.textFaint(context),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (controller.isGridView)
+            _CategoryGrid(controller: controller, categories: detected)
+          else
+            _CategoryList(controller: controller, categories: detected),
+        ],
+      ),
+    );
+  }
+}
+
+void _openCategory(AiCategoriesController controller, PhotoCategory category) {
+  controller.openCategory(category);
+  Get.to(
+    () => AiCategoryPhotosView(category: category),
+    transition: Transition.rightToLeft,
+  );
+}
+
+class _FeaturedCard extends StatelessWidget {
+  const _FeaturedCard({required this.controller, required this.category});
+
+  final AiCategoriesController controller;
+  final PhotoCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumb = controller.thumbnailFor(category);
+    final count = controller.countFor(category);
+    final label = category == PhotoCategory.all ? 'All Photos' : category.label;
+    return GestureDetector(
+      onTap: () => _openCategory(controller, category),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            _ScanSummary(controller: controller),
-            const SizedBox(height: 20),
-            const Text(
-              'DETECTED CATEGORIES',
-              style: TextStyle(
-                color: Color(0xFF697486),
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.2,
+            if (thumb != null)
+              AssetThumbnail(asset: thumb, size: const ThumbnailSize(240, 240))
+            else
+              ColoredBox(color: category.color.withValues(alpha: 0.25)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            _CategoryGrid(controller: controller),
+            Positioned(
+              left: 10,
+              right: 8,
+              bottom: 9,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    '$count',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryList extends StatelessWidget {
+  const _CategoryList({required this.controller, required this.categories});
+
+  final AiCategoriesController controller;
+  final List<PhotoCategory> categories;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxCount = controller.maxCategoryCount;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderFor(context)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < categories.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                indent: 64,
+                color: AppColors.borderFor(context),
+              ),
+            _CategoryListRow(
+              controller: controller,
+              category: categories[i],
+              maxCount: maxCount,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryListRow extends StatelessWidget {
+  const _CategoryListRow({
+    required this.controller,
+    required this.category,
+    required this.maxCount,
+  });
+
+  final AiCategoriesController controller;
+  final PhotoCategory category;
+  final int maxCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = controller.countFor(category);
+    final thumb = controller.thumbnailFor(category);
+    final fraction = maxCount == 0 ? 0.0 : (count / maxCount).clamp(0.05, 1.0);
+    return InkWell(
+      onTap: () => _openCategory(controller, category),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          children: [
+            ClipOval(
+              child: SizedBox(
+                width: 38,
+                height: 38,
+                child: thumb != null
+                    ? AssetThumbnail(
+                        asset: thumb,
+                        size: const ThumbnailSize(120, 120),
+                      )
+                    : ColoredBox(color: category.color.withValues(alpha: 0.2)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.label,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      value: fraction.toDouble(),
+                      minHeight: 4,
+                      backgroundColor: AppColors.surfaceTint(context),
+                      valueColor: AlwaysStoppedAnimation(category.color),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '$count',
+              style: TextStyle(
+                color: category.color,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 16,
+              color: AppColors.textFaint(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({required this.controller, required this.categories});
+
+  final AiCategoriesController controller;
+  final List<PhotoCategory> categories;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: categories.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.5,
+      ),
+      itemBuilder: (context, index) {
+        final category = categories[index];
+        return _CategoryGridCard(controller: controller, category: category);
+      },
+    );
+  }
+}
+
+class _CategoryGridCard extends StatelessWidget {
+  const _CategoryGridCard({required this.controller, required this.category});
+
+  final AiCategoriesController controller;
+  final PhotoCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumb = controller.thumbnailFor(category);
+    final count = controller.countFor(category);
+    return GestureDetector(
+      onTap: () => _openCategory(controller, category),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (thumb != null)
+              AssetThumbnail(asset: thumb, size: const ThumbnailSize(300, 300))
+            else
+              ColoredBox(color: category.color.withValues(alpha: 0.25)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x33000000), Color(0xCC000000)],
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              right: 10,
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: category.color,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(category.icon, size: 13, color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      category.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -110,7 +521,6 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percent = controller.progressPercent;
-
     return Padding(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -119,7 +529,7 @@ class _LoadingState extends StatelessWidget {
           const LoadingShimmer(
             child: Icon(
               LucideIcons.sparkles,
-              color: Color(0xFF18D0B8),
+              color: AppColors.accent,
               size: 42,
             ),
           ),
@@ -130,7 +540,7 @@ class _LoadingState extends StatelessWidget {
             style: TextStyle(
               color: AppColors.textPrimary(context),
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),
@@ -142,19 +552,17 @@ class _LoadingState extends StatelessWidget {
             style: TextStyle(
               color: AppColors.textMuted(context),
               fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 18),
-          LoadingShimmer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: controller.totalToScan == 0 ? null : controller.progress,
-                minHeight: 5,
-                backgroundColor: const Color(0xFF222B3C),
-                valueColor: const AlwaysStoppedAnimation(Color(0xFF18D0B8)),
-              ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: controller.totalToScan == 0 ? null : controller.progress,
+              minHeight: 5,
+              backgroundColor: AppColors.surfaceTint(context),
+              valueColor: const AlwaysStoppedAnimation(AppColors.accent),
             ),
           ),
           if (controller.totalToScan > 0) ...[
@@ -162,9 +570,9 @@ class _LoadingState extends StatelessWidget {
             Text(
               '$percent%',
               style: const TextStyle(
-                color: Color(0xFF18D0B8),
+                color: AppColors.accent,
                 fontSize: 11,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -174,199 +582,9 @@ class _LoadingState extends StatelessWidget {
   }
 }
 
-class _ScanSummary extends StatelessWidget {
-  const _ScanSummary({required this.controller});
-
-  final AiCategoriesController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.surface(context)
-            : AppColors.surface(context),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderFor(context)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF18D0B8).withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              LucideIcons.sparkles,
-              color: Color(0xFF18D0B8),
-              size: 21,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${controller.totalPhotos} photos categorized',
-                  style: TextStyle(
-                    color: AppColors.textPrimary(context),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  controller.isScanning
-                      ? '${controller.scannedCount} of ${controller.totalToScan} scanned'
-                      : 'Grouped locally by faces and image labels.',
-                  style: TextStyle(
-                    color: AppColors.textMuted(context),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.controller});
-
-  final AiCategoriesController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final categories = controller.visibleCategories;
-
-    return GridView.builder(
-      itemCount: categories.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 18,
-        crossAxisSpacing: 14,
-        childAspectRatio: 0.76,
-      ),
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        return _CategoryCard(
-          category: category,
-          count: controller.countFor(category),
-          thumbnail: controller.thumbnailFor(category),
-          onTap: () {
-            controller.openCategory(category);
-            Get.to(
-              () => AiCategoryPhotosView(category: category),
-              transition: Transition.rightToLeft,
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({
-    required this.category,
-    required this.count,
-    required this.onTap,
-    this.thumbnail,
-  });
-
-  final PhotoCategory category;
-  final int count;
-  final VoidCallback onTap;
-  final AssetEntity? thumbnail;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? AppColors.surface(context)
-                    : AppColors.surface(context),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.borderFor(context)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  thumbnail == null
-                      ? ColoredBox(
-                          color: category.color.withValues(alpha: 0.18),
-                        )
-                      : AssetThumbnail(
-                          asset: thumbnail!,
-                          size: const ThumbnailSize(300, 300),
-                          quality: 80,
-                        ),
-                  Positioned(
-                    right: 7,
-                    top: 7,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF071120).withValues(alpha: 0.82),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Icon(
-                        category.icon,
-                        color: category.color,
-                        size: 15,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            category.label,
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: AppColors.textPrimary(context),
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            '$count',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textMuted(context),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// ---------------------------------------------------------------------------
+// Per-category photo grid (unchanged behaviour, tokenised styling).
+// ---------------------------------------------------------------------------
 class AiCategoryPhotosView extends StatelessWidget {
   const AiCategoryPhotosView({super.key, required this.category});
 
@@ -383,20 +601,15 @@ class AiCategoryPhotosView extends StatelessWidget {
           body: SafeArea(
             child: Column(
               children: [
-                _Header(title: category.label),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
-                  child: _CategoryDetailSummary(
-                    category: category,
-                    count: photos.length,
-                    thumbnail: photos.isEmpty ? null : photos.first.asset,
-                  ),
+                SiftTopAppBar(
+                  title: category.label,
+                  subtitle: '${photos.length} photos',
                 ),
                 Expanded(
                   child: photos.isEmpty
                       ? const _EmptyCategoryState()
                       : GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
@@ -424,14 +637,12 @@ class AiCategoryPhotosView extends StatelessWidget {
                                       width: 24,
                                       height: 24,
                                       decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFF071120,
-                                        ).withValues(alpha: 0.82),
+                                        color: photo.primaryCategory.color,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
                                         photo.primaryCategory.icon,
-                                        color: photo.primaryCategory.color,
+                                        color: Colors.white,
                                         size: 13,
                                       ),
                                     ),
@@ -451,67 +662,6 @@ class AiCategoryPhotosView extends StatelessWidget {
   }
 }
 
-class _CategoryDetailSummary extends StatelessWidget {
-  const _CategoryDetailSummary({
-    required this.category,
-    required this.count,
-    this.thumbnail,
-  });
-
-  final PhotoCategory category;
-  final int count;
-  final AssetEntity? thumbnail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 96,
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? AppColors.surface(context)
-            : AppColors.surface(context),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderFor(context)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: thumbnail == null
-                ? ColoredBox(color: category.color.withValues(alpha: 0.18))
-                : AssetThumbnail(
-                          asset: thumbnail!,
-                          size: const ThumbnailSize(300, 300),
-                          quality: 80,
-                        ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(category.icon, color: category.color, size: 20),
-                const SizedBox(height: 8),
-                Text(
-                  '$count ${(count == 1 ? 'photo' : 'photos').tr}',
-                  style: TextStyle(
-                    color: AppColors.textPrimary(context),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyCategoryState extends StatelessWidget {
   const _EmptyCategoryState();
 
@@ -523,50 +673,8 @@ class _EmptyCategoryState extends StatelessWidget {
         style: TextStyle(
           color: AppColors.textMuted(context),
           fontSize: 13,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.title, this.trailing, this.showBack = true});
-
-  final String title;
-  final Widget? trailing;
-  final bool showBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SiftTopAppBar(title: title, trailing: trailing, showBack: showBack);
-  }
-}
-
-class _ScanAgainAction extends StatelessWidget {
-  const _ScanAgainAction({required this.controller});
-
-  final AiCategoriesController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final light = Theme.of(context).brightness == Brightness.light;
-    final accent = light ? const Color(0xFF0E8F80) : const Color(0xFF18D0B8);
-    final scanning = controller.isScanning;
-
-    return TextButton.icon(
-      onPressed: scanning ? null : () => controller.scanLibrary(force: true),
-      icon: scanning
-          ? SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2, color: accent),
-            )
-          : const Icon(LucideIcons.refreshCw, size: 16),
-      label: Text(scanning ? 'Scanning' : 'Scan Again'),
-      style: TextButton.styleFrom(
-        foregroundColor: accent,
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:sift/app/ai_categories/ai_categories_binding.dart';
 import 'package:sift/app/ai_categories/ai_categories_view.dart';
+import 'package:sift/app/all_actions/all_actions_view.dart';
+import 'package:sift/app/review_delete/review_delete_view.dart';
 import 'package:sift/app/apps_manager/apps_manager_binding.dart';
 import 'package:sift/app/apps_manager/apps_manager_view.dart';
 import 'package:sift/app/battery_manager/battery_manager_binding.dart';
@@ -28,9 +30,9 @@ import 'package:sift/app/problem_framing/problem_framing_view.dart';
 import 'package:sift/app/recycle_bin/recycle_bin_binding.dart';
 import 'package:sift/app/recycle_bin/recycle_bin_view.dart';
 import 'package:sift/app/routes/app_routes.dart';
-import 'package:sift/app/similar_photos/similar_photos_binding.dart';
-import 'package:sift/app/similar_photos/similar_photos_controller.dart';
-import 'package:sift/app/similar_photos/similar_photos_view.dart';
+import 'package:sift/app/photos/photos_binding.dart';
+import 'package:sift/app/photos/photos_controller.dart';
+import 'package:sift/app/photos/photos_view.dart';
 import 'package:sift/app/splash/splash_binding.dart';
 import 'package:sift/app/splash/splash_view.dart';
 import 'package:sift/app/subscription/subscription_binding.dart';
@@ -162,6 +164,14 @@ class AppPages {
       name: AppRoutes.recycleBin,
       page: () => const RecycleBinView(),
       binding: RecycleBinBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.allActions,
+      page: () => const AllActionsView(),
+    ),
+    GetPage(
+      name: AppRoutes.reviewDelete,
+      page: () => const ReviewDeleteView(),
     ),
   ];
 }

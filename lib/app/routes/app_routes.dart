@@ -23,4 +23,6 @@ class AppRoutes {
   static const batteryManager = '/battery-manager';
   static const subscription = '/subscription';
   static const recycleBin = '/recycle-bin';
+  static const allActions = '/all-actions';
+  static const reviewDelete = '/review-delete';
 }
