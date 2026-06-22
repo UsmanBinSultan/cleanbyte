@@ -3,7 +3,7 @@ import 'package:sift/app/routes/app_routes.dart';
 import 'package:sift/services/app_flags.dart';
 
 class SplashController extends GetxController {
-  static SplashController instance = Get.find();
+  static SplashController get instance => Get.find();
 
   @override
   void onReady() {
@@ -12,10 +12,10 @@ class SplashController extends GetxController {
       if (Get.currentRoute == AppRoutes.splash) {
         final hasSeenOnboarding = await AppFlags.hasSeenOnboarding();
         Get.offNamed(
-          hasSeenOnboarding ? 
-           AppRoutes.homeDashboard 
-          // AppRoutes.onboarding 
-          : AppRoutes.onboarding,
+          hasSeenOnboarding
+              ? AppRoutes.homeDashboard
+              // AppRoutes.onboarding
+              : AppRoutes.onboarding,
         );
       }
     });

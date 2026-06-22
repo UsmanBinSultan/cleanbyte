@@ -10,7 +10,7 @@ import 'package:sift/services/app_flags.dart';
 /// 0 = "We only look, never delete" · 1 = "Find what's taking up space" ·
 /// 2 = "Your photos stay private" · 3 = "One last step" (permissions).
 class OnboardingController extends GetxController {
-  static OnboardingController instance = Get.find();
+  static OnboardingController get instance => Get.find();
 
   static const int pageCount = 4;
 

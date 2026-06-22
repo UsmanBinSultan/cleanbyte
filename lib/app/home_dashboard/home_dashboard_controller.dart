@@ -51,7 +51,7 @@ class DashboardMetric {
 }
 
 class HomeDashboardController extends GetxController {
-  static HomeDashboardController instance = Get.find();
+  static HomeDashboardController get instance => Get.find();
   static const _storageChannel = MethodChannel('sift/storage');
   static const _appsChannel = MethodChannel('sift/apps');
   static const int _mediaPreviewLimit = 960;

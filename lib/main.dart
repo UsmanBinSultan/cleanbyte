@@ -8,6 +8,17 @@ import 'package:sift/app/settings/settings_controller.dart';
 import 'package:sift/services/recycle_bin_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Cap the global image cache. The default is 1000 images / 100 MB, which a
+  // photo-heavy cleaner fills almost immediately while scrolling thumbnail
+  // grids. 50 MB keeps plenty of decoded tiles warm for smooth scrolling while
+  // bounding resident bitmap memory to roughly half the previous ceiling.
+  const imageCacheMaxBytes = 50 * 1024 * 1024; // 50 MB
+  PaintingBinding.instance.imageCache
+    ..maximumSizeBytes = imageCacheMaxBytes
+    ..maximumSize = 200; // decoded images
+
   SettingsBinding().dependencies();
   // Loads the saved index and purges anything older than 30 days on startup.
   Get.put(RecycleBinService(), permanent: true);

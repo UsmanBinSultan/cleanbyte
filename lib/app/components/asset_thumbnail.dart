@@ -56,24 +56,45 @@ class _AssetThumbnailState extends State<AssetThumbnail> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List?>(
-      future: _thumbnail,
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        if (bytes == null) {
-          return const ColoredBox(
-            color: Color(0xFF172237),
-            child: Center(
-              child: Icon(
-                LucideIcons.image,
-                color: Color(0xFF687384),
-                size: 22,
-              ),
-            ),
-          );
-        }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Decode the bitmap no larger than the box actually shown on screen
+        // (in physical pixels), never larger than the source thumbnail. This
+        // keeps each decoded image — and therefore the global image cache —
+        // sized to the display instead of the full thumbnail resolution.
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final boxWidth = constraints.maxWidth.isFinite
+            ? (constraints.maxWidth * dpr).round()
+            : widget.size.width;
+        final cacheWidth = boxWidth <= 0
+            ? widget.size.width
+            : (boxWidth < widget.size.width ? boxWidth : widget.size.width);
 
-        return Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true);
+        return FutureBuilder<Uint8List?>(
+          future: _thumbnail,
+          builder: (context, snapshot) {
+            final bytes = snapshot.data;
+            if (bytes == null) {
+              return const ColoredBox(
+                color: Color(0xFF172237),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.image,
+                    color: Color(0xFF687384),
+                    size: 22,
+                  ),
+                ),
+              );
+            }
+
+            return Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              cacheWidth: cacheWidth,
+            );
+          },
+        );
       },
     );
   }

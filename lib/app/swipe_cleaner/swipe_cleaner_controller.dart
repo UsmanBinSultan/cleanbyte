@@ -13,7 +13,7 @@ import 'package:sift/services/recycle_bin_service.dart';
 ///
 /// All decision/loading state lives here so the view stays presentation-only.
 class SwipeCleanerController extends GetxController {
-  static SwipeCleanerController instance = Get.find();
+  static SwipeCleanerController get instance => Get.find();
 
   static const int _maxPhotos = 200;
 

@@ -56,7 +56,7 @@ class ManagedApp {
 }
 
 class AppsManagerController extends GetxController with WidgetsBindingObserver {
-  static AppsManagerController instance = Get.find();
+  static AppsManagerController get instance => Get.find();
 
   static const _channel = MethodChannel('sift/apps');
 

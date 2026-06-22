@@ -78,9 +78,11 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/app_logo.png"
+  # Source artwork kept outside the bundled `assets/` tree so the full-res
+  # 1024² launcher icon is not also shipped inside the app at runtime.
+  image_path: "branding/app_logo.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icons/app_logo.png"
+  adaptive_icon_foreground: "branding/app_logo.png"
   remove_alpha_ios: true
 
   # To add assets to your application, add an assets section, like this:

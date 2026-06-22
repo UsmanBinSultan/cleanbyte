@@ -140,7 +140,7 @@ class DuplicatePhotoGroup {
 enum VideoSort { largest, oldest, recent }
 
 class SimilarPhotosController extends GetxController {
-  static SimilarPhotosController instance = Get.find();
+  static SimilarPhotosController get instance => Get.find();
 
   VideoSort videoSort = VideoSort.largest;
   static final _blurredPhotosScan = _BlurredPhotosScanSnapshot();

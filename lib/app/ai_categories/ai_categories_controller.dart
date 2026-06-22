@@ -65,7 +65,7 @@ class AiCategoriesScanCache {
 }
 
 class AiCategoriesController extends GetxController {
-  static AiCategoriesController instance = Get.find();
+  static AiCategoriesController get instance => Get.find();
 
   static const int _pageSize = 80;
   static const String _scanCacheFileName = 'ai_categories_scan_cache.json';
@@ -93,8 +93,11 @@ class AiCategoriesController extends GetxController {
     PhotoCategory.uncategorized,
   ];
 
+  // Each PhotoCategorizer holds two native ML Kit models (an image labeler and
+  // a face detector), so the pool size directly multiplies native memory. Two
+  // gives enough scan concurrency without keeping eight models resident.
   final List<PhotoCategorizer> _categorizers = List.generate(
-    4,
+    2,
     (_) => PhotoCategorizer(),
   );
 

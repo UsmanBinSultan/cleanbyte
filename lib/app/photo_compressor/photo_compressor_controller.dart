@@ -41,7 +41,7 @@ class CompressedPhoto {
 }
 
 class PhotoCompressorController extends GetxController {
-  static PhotoCompressorController instance = Get.find();
+  static PhotoCompressorController get instance => Get.find();
 
   static const _channel = MethodChannel('sift/photos');
   static const int _pageSize = 80;

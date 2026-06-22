@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class InitialScanController extends GetxController {
-  static InitialScanController instance = Get.find();
+  static InitialScanController get instance => Get.find();
 
   bool isScanning = false;
   bool isComplete = false;

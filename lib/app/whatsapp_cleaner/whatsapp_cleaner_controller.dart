@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sift/services/recycle_bin_service.dart';
 
 class WhatsappCleanerController extends GetxController {
-  static WhatsappCleanerController instance = Get.find();
+  static WhatsappCleanerController get instance => Get.find();
   static _WhatsappSummaryCache? _summaryCache;
 
   bool isLoadingSummary = true;

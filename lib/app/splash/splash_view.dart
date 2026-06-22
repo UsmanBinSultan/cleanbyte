@@ -142,9 +142,9 @@ class _LogoBadgeState extends State<_LogoBadge>
             animation: _controller,
             builder: (context, child) => CustomPaint(
               size: const Size.square(112),
-              painter: _RingPainter(progress: Curves.easeInOut.transform(
-                _controller.value,
-              )),
+              painter: _RingPainter(
+                progress: Curves.easeInOut.transform(_controller.value),
+              ),
             ),
           ),
           Container(
@@ -162,7 +162,14 @@ class _LogoBadgeState extends State<_LogoBadge>
               ],
             ),
             padding: const EdgeInsets.all(18),
-            child: Image.asset('assets/icons/cleaner.png', fit: BoxFit.contain),
+            // Shown at ~48 logical px; decode small instead of at the source
+            // 1024² (which would cost ~4 MB as a bitmap for a tiny icon).
+            child: Image.asset(
+              'assets/icons/cleaner.png',
+              fit: BoxFit.contain,
+              cacheWidth: 192,
+              cacheHeight: 192,
+            ),
           ),
         ],
       ),

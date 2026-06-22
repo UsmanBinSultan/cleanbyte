@@ -4,7 +4,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sift/services/revenue_cat_service.dart';
 
 class PaywallController extends GetxController {
-  static PaywallController instance = Get.find();
+  static PaywallController get instance => Get.find();
 
   bool isLoading = true;
   bool isPurchasing = false;

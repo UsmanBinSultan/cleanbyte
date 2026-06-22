@@ -66,7 +66,7 @@ class BatterySnapshot {
 
 class BatteryManagerController extends GetxController
     with WidgetsBindingObserver {
-  static BatteryManagerController instance = Get.find();
+  static BatteryManagerController get instance => Get.find();
 
   static const _channel = MethodChannel('sift/battery');
   static const _refreshInterval = Duration(seconds: 30);
