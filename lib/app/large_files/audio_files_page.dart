@@ -135,7 +135,8 @@ class _AudioFilesPageState extends State<AudioFilesPage> {
       return _AudioEmpty(
         icon: LucideIcons.music,
         title: 'Audio access needed',
-        body: 'Allow audio access so Clean Byte can list your music, '
+        body:
+            'Allow audio access so Clean Byte can list your music, '
             'recordings and voice notes.',
         actionLabel: 'Open Settings',
         onAction: PhotoManager.openSetting,

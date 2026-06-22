@@ -40,7 +40,7 @@ class _LoadingShimmerState extends State<LoadingShimmer>
     super.initState();
     _animation = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1300),
+      duration: const Duration(milliseconds: 500),
     )..repeat();
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/home_dashboard/home_dashboard_controller.dart';
@@ -8,7 +9,7 @@ import 'package:sift/app/routes/app_routes.dart';
 /// secondary screens that are reached from it (e.g. AI categories).
 ///
 /// [activeIndex] highlights the current destination:
-/// 0 = home, 1 = image categories, 2 = files, 3 = whatsapp cleaner,
+/// 0 = home, 1 = image categories, 2 = all actions, 3 = whatsapp cleaner,
 /// 4 = settings. The previous four-tab home dashboard still passes 3 for
 /// settings, so that value is normalized in the widget below.
 class SiftBottomNavBar extends StatelessWidget {
@@ -30,7 +31,7 @@ class SiftBottomNavBar extends StatelessWidget {
         Get.toNamed(AppRoutes.aiCategories, arguments: {'fromNav': true});
         break;
       case 2:
-        Get.toNamed(AppRoutes.largeFiles, arguments: {'fromNav': true});
+        Get.toNamed(AppRoutes.allActions, arguments: {'fromNav': true});
         break;
       case 3:
         Get.toNamed(AppRoutes.whatsappCleaner, arguments: {'fromNav': true});
@@ -38,7 +39,7 @@ class SiftBottomNavBar extends StatelessWidget {
       case 4:
         _backToHomeTab(3);
         break;
-    }
+    }     
   }
 
   void _backToHomeTab(int tab) {
@@ -89,14 +90,15 @@ class SiftBottomNavBar extends StatelessWidget {
             onTap: () => _onTap(1),
           ),
           _NavItem(
-            label: 'Files'.tr,
-            icon: LucideIcons.folder,
+            label: 'All Actions'.tr,
+            icon: LucideIcons.layoutGrid,
             active: _normalizedActiveIndex == 2,
             onTap: () => _onTap(2),
           ),
           _NavItem(
             label: 'wa clean'.tr,
             icon: LucideIcons.messageCircle,
+            iconAsset: 'assets/icons/whatsapp.svg',
             active: _normalizedActiveIndex == 3,
             onTap: () => _onTap(3),
           ),
@@ -118,10 +120,12 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.active,
     required this.onTap,
+    this.iconAsset,
   });
 
   final String label;
   final IconData icon;
+  final String? iconAsset;
   final bool active;
   final VoidCallback onTap;
 
@@ -135,7 +139,15 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 22, color: color),
+            if (iconAsset != null)
+              SvgPicture.asset(
+                iconAsset!,
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              )
+            else
+              Icon(icon, size: 22, color: color),
             const SizedBox(height: 4),
             Text(
               label,

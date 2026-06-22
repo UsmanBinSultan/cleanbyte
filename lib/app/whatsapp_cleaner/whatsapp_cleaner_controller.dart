@@ -104,7 +104,6 @@ class WhatsappCleanerController extends GetxController {
       controller.update();
     }
   }
-
 }
 
 class _WhatsappSummaryCache {

@@ -277,8 +277,8 @@ class _ImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = big ? 94.0 : 64.0;
-    final height = big ? 70.0 : 48.0;
+    final width = big ? 94.0 : 94.0;
+    final height = big ? 70.0 : 70.0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),

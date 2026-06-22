@@ -318,7 +318,10 @@ class LargeFilesController extends GetxController {
   Future<List<({String label, Directory dir})>> _documentRoots() async {
     if (Platform.isAndroid) {
       return [
-        (label: sourceDownloads, dir: Directory('/storage/emulated/0/Download')),
+        (
+          label: sourceDownloads,
+          dir: Directory('/storage/emulated/0/Download'),
+        ),
         (
           label: sourceDocuments,
           dir: Directory('/storage/emulated/0/Documents'),
@@ -326,7 +329,9 @@ class LargeFilesController extends GetxController {
         (label: sourceCamera, dir: Directory('/storage/emulated/0/DCIM')),
         (
           label: sourceWhatsApp,
-          dir: Directory('/storage/emulated/0/WhatsApp/Media/WhatsApp Documents'),
+          dir: Directory(
+            '/storage/emulated/0/WhatsApp/Media/WhatsApp Documents',
+          ),
         ),
         (
           label: sourceWhatsApp,

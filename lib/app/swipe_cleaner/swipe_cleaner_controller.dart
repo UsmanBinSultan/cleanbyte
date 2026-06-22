@@ -155,7 +155,9 @@ class SwipeCleanerController extends GetxController {
         .toList(growable: false);
     await bin.backupAssets(marked);
 
-    final requestedIds = marked.map((asset) => asset.id).toList(growable: false);
+    final requestedIds = marked
+        .map((asset) => asset.id)
+        .toList(growable: false);
     final deletedIds = await PhotoManager.editor.deleteWithIds(requestedIds);
     final deletedSet = deletedIds.toSet();
     await bin.discardBackups(

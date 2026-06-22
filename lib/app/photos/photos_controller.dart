@@ -769,6 +769,48 @@ class SimilarPhotosController extends GetxController {
     return deletedSet.length;
   }
 
+  /// Keeps the best copy of [group] and deletes its extra duplicates right
+  /// away (recycle-bin backed), so the "Keep best" action works on a single
+  /// tap without needing the bottom delete bar.
+  Future<int> deleteGroupExtras(DuplicatePhotoGroup group) async {
+    if (isDeleting) {
+      return 0;
+    }
+    final extras = group.extras;
+    if (extras.isEmpty) {
+      return 0;
+    }
+
+    isDeleting = true;
+    update();
+
+    final bin = Get.find<RecycleBinService>();
+    await bin.backupAssets(extras);
+
+    final requestedIds = extras.map((e) => e.id).toList(growable: false);
+    final deletedIds = await PhotoManager.editor.deleteWithIds(requestedIds);
+    final deletedSet = deletedIds.toSet();
+    await bin.discardBackups(
+      requestedIds.where((id) => !deletedSet.contains(id)),
+    );
+
+    assets = assets.where((asset) => !deletedSet.contains(asset.id)).toList();
+    assetByteSizes.removeWhere((id, _) => deletedSet.contains(id));
+    duplicateGroupCounts.removeWhere((id, _) => deletedSet.contains(id));
+    _assetGroupKey.removeWhere((id, _) => deletedSet.contains(id));
+    blurResults.removeWhere((id, _) => deletedSet.contains(id));
+    selectedIds.removeWhere(deletedSet.contains);
+    totalCount = totalCount - deletedSet.length;
+    if (totalCount < 0) {
+      totalCount = 0;
+    }
+    _recomputeDuplicateGroups();
+    isDeleting = false;
+    update();
+
+    return deletedSet.length;
+  }
+
   /// Deletes a single asset (used by the per-row Delete button on the video
   /// list). Backs it up to the recycle bin first, like [deleteSelected].
   Future<bool> deleteAsset(AssetEntity asset) async {

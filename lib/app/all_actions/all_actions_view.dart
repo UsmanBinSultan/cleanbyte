@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/components/cleanup_action.dart';
+import 'package:sift/app/components/sift_bottom_nav_bar.dart';
 import 'package:sift/app/components/sift_top_app_bar.dart';
 import 'package:sift/app/home_dashboard/home_dashboard_controller.dart';
 
@@ -28,9 +29,11 @@ class _AllActionsViewState extends State<AllActionsView> {
       ? HomeDashboardController.instance
       : null;
 
-  DashboardMetric? _metric(CleanupAction action) => _home?.metric(action.metricKey);
+  DashboardMetric? _metric(CleanupAction action) =>
+      _home?.metric(action.metricKey);
 
-  bool _isHighImpact(CleanupAction a) => (_metric(a)?.bytes ?? 0) >= _highImpactBytes;
+  bool _isHighImpact(CleanupAction a) =>
+      (_metric(a)?.bytes ?? 0) >= _highImpactBytes;
   bool _hasItems(CleanupAction a) => (_metric(a)?.count ?? 0) > 0;
   bool _isQuickWin(CleanupAction a) => _hasItems(a) && !_isHighImpact(a);
 
@@ -61,9 +64,16 @@ class _AllActionsViewState extends State<AllActionsView> {
       }
     }).toList();
 
+    final args = Get.arguments;
+    final fromNav = args is Map && args['fromNav'] == true;
+
     return Scaffold(
       backgroundColor: AppColors.pageBackground(context),
+      bottomNavigationBar: fromNav
+          ? const SiftBottomNavBar(activeIndex: 2)
+          : null,
       body: SafeArea(
+        bottom: !fromNav,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
@@ -71,6 +81,7 @@ class _AllActionsViewState extends State<AllActionsView> {
               children: [
                 SiftTopAppBar(
                   title: 'All Actions',
+                  showBack: !fromNav,
                   subtitle: withData.isEmpty
                       ? 'Run a scan to see what can be cleaned'
                       : '${withData.length} categories · up to '
@@ -273,7 +284,11 @@ class _ActionTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.iconChipBg(context, action.iconColor, action.tint),
+                color: AppColors.iconChipBg(
+                  context,
+                  action.iconColor,
+                  action.tint,
+                ),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(action.icon, color: action.iconColor, size: 21),

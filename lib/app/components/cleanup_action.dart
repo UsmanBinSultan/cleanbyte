@@ -74,14 +74,14 @@ const List<CleanupAction> kCleanupActions = [
     tint: AppColors.tintPink,
     route: AppRoutes.blurredPhotos,
   ),
-  // CleanupAction(
-  //   title: 'Photo Compressor',
-  //   metricKey: HomeDashboardController.photoCompressorKey,
-  //   icon: LucideIcons.minimize2,
-  //   iconColor: AppColors.iconPink,
-  //   tint: AppColors.tintPink,
-  //   route: AppRoutes.photoCompressor,
-  // ),
+  CleanupAction(
+    title: 'Photo Compressor',
+    metricKey: HomeDashboardController.photoCompressorKey,
+    icon: LucideIcons.minimize2,
+    iconColor: AppColors.iconPink,
+    tint: AppColors.tintPink,
+    route: AppRoutes.photoCompressor,
+  ),
   CleanupAction(
     title: 'Duplicate Contacts',
     metricKey: HomeDashboardController.duplicateContactsKey,

@@ -219,14 +219,9 @@ class SettingsController extends GetxController {
     var cleared = 0;
     try {
       final directory = await getApplicationSupportDirectory();
-      const cacheFiles = [
-        'ai_categories_scan_cache.json',
-        'blur_cache.json',
-      ];
+      const cacheFiles = ['ai_categories_scan_cache.json', 'blur_cache.json'];
       for (final name in cacheFiles) {
-        final file = File(
-          '${directory.path}${Platform.pathSeparator}$name',
-        );
+        final file = File('${directory.path}${Platform.pathSeparator}$name');
         if (await file.exists()) {
           await file.delete();
           cleared++;

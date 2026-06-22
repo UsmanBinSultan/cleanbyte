@@ -277,9 +277,7 @@ class HomeDashboardController extends GetxController {
     _setMetrics({
       aiCleanupKey: DashboardMetric(
         count:
-            media.duplicates.count +
-            media.screenshots.count +
-            largeFiles.count,
+            media.duplicates.count + media.screenshots.count + largeFiles.count,
         bytes: reclaimableBytes,
         labelOverride: '${formatBytes(reclaimableBytes)} ${'junk'.tr}',
       ),
