@@ -12,8 +12,8 @@ enum BatteryOptimisation {
   // brightness('Reduce screen brightness', 'Auto at 70% peak', 45),
   // backgroundData('Disable background data', 'For non-essential apps', 30),
   location('Limit location services', 'Only while using', 60),
-  
-   notifications('Reduce notifications', 'Group non-priority', 20);
+
+  notifications('Reduce notifications', 'Group non-priority', 20);
 
   const BatteryOptimisation(this.title, this.subtitle, this.savingMinutes);
 
