@@ -18,7 +18,8 @@ class AccessGate extends StatelessWidget {
       child: Column(
         children: [
           Align(
-            alignment: Alignment.centerRight,
+            // Directional so the settings button moves to the leading edge in RTL.
+            alignment: AlignmentDirectional.centerEnd,
             child: DashboardIconButton(
               icon: LucideIcons.settings,
               onTap: () => controller.changeTab(3),

@@ -30,7 +30,7 @@ class SettingsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'settings'.tr,
+                  'Settings'.tr,
                   style: TextStyle(
                     color: AppColors.textPrimary(context),
                     fontSize: 28,
@@ -115,7 +115,7 @@ class SettingsView extends StatelessWidget {
                       icon: LucideIcons.palette,
                       iconColor: AppColors.iconAmber,
                       tint: AppColors.tintAmber,
-                      titleKey: 'theme',
+                      titleKey: 'Theme',
                       subtitleKey: 'change theme',
                       valueText: controller.selectedThemeLabel,
                       onTap: () => _showThemePicker(controller),

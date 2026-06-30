@@ -5,6 +5,7 @@ import 'package:sift/app/routes/app_routes.dart';
 import 'package:sift/app/components/app_colors.dart';
 import 'package:sift/app/settings/settings_binding.dart';
 import 'package:sift/app/settings/settings_controller.dart';
+import 'package:sift/app/translations/app_translations.dart';
 import 'package:sift/services/recycle_bin_service.dart';
 
 void main() {
@@ -35,7 +36,7 @@ class CleanByteApp extends StatelessWidget {
       title: 'clean byte',
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
-      // translations: AppTranslations(),
+      translations: AppTranslations(),
       locale: Get.find<SettingsController>().currentLocale,
       fallbackLocale: const Locale('en', 'US'),
       themeMode: Get.find<SettingsController>().themeMode,

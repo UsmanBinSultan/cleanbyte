@@ -102,7 +102,8 @@ class StorageDonutCard extends StatelessWidget {
           Divider(height: 1, color: AppColors.borderFor(context)),
           const SizedBox(height: 12),
           Align(
-            alignment: Alignment.centerLeft,
+            // Directional so the caption aligns to the leading edge in RTL.
+            alignment: AlignmentDirectional.centerStart,
             child: Text(
               'Clean Byte-managed storage',
               style: TextStyle(

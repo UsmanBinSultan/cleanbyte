@@ -25,7 +25,7 @@ class WaMediaHeader extends StatelessWidget {
           disabledForegroundColor: const Color(0xFF4A5362),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
-        child: Text(allSelected ? 'clear'.tr : 'select_all'.tr),
+        child: Text(allSelected ? 'clear'.tr : 'select all'.tr),
       ),
     );
   }

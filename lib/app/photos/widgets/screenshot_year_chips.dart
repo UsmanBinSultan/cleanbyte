@@ -27,7 +27,8 @@ class ScreenshotYearChips extends StatelessWidget {
   Widget _chip(BuildContext context, String label, int? value) {
     final active = controller.screenshotYear == value;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      // Directional trailing gap so chip spacing stays correct in RTL.
+      padding: const EdgeInsetsDirectional.only(end: 8),
       child: InkWell(
         onTap: () => controller.setScreenshotYear(value),
         borderRadius: BorderRadius.circular(99),

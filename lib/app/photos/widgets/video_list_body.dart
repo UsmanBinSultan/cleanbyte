@@ -16,94 +16,117 @@ class VideoListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allSelected =
-        controller.assets.isNotEmpty &&
-        controller.selectedIds.length == controller.assets.length;
+    final assets = controller.assets;
     return RefreshIndicator(
       color: AppColors.accent,
       backgroundColor: AppColors.surface(context),
       onRefresh: controller.loadAssets,
-      child: ListView(
+      // Lazy builder so only on-screen rows build and decode their thumbnails.
+      // Index 0 is the stats/sort/selection header; the rest are video rows.
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-        children: [
-          Row(
-            children: [
-              _VideoStat(
-                value: '${controller.totalCount}',
-                label: 'Videos',
-                highlight: false,
-              ),
-              const SizedBox(width: 10),
-              _VideoStat(
-                value: formatBytes(controller.totalVideoBytes),
-                label: 'Total size',
-                highlight: false,
-              ),
-              const SizedBox(width: 10),
-              _VideoStat(
-                value: formatBytes(controller.selectedBytes),
-                label: 'Selected',
-                highlight: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          VideoSortChips(controller: controller),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: controller.selectedIds.isEmpty
-                      ? AppColors.textFaint(context)
-                      : AppColors.iconAmber,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${controller.selectedIds.length} videos selected · '
-                  '${formatBytes(controller.selectedBytes)}',
-                  style: TextStyle(
-                    color: AppColors.textMuted(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              InkWell(
-                onTap: controller.assets.isEmpty
-                    ? null
-                    : controller.toggleSelectAll,
-                child: Text(
-                  allSelected ? 'Clear' : 'Select all',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          for (final asset in controller.assets)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: VideoRow(
-                asset: asset,
-                size: controller.assetByteSizes[asset.id],
-                selected: controller.isSelected(asset),
-                onTap: () => controller.toggleAsset(asset),
-                onDelete: () => _confirmDeleteVideo(context, controller, asset),
+        itemCount: assets.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _VideoListHeader(controller: controller);
+          }
+          final asset = assets[index - 1];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: VideoRow(
+              asset: asset,
+              size: controller.assetByteSizes[asset.id],
+              selected: controller.isSelected(asset),
+              onTap: () => controller.toggleAsset(asset),
+              onDelete: () => _confirmDeleteVideo(context, controller, asset),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Stats cards, sort chips and the selection summary shown above the video
+/// list. Kept as the first item of the lazy [ListView.builder].
+class _VideoListHeader extends StatelessWidget {
+  const _VideoListHeader({required this.controller});
+
+  final SimilarPhotosController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final allSelected =
+        controller.assets.isNotEmpty &&
+        controller.selectedIds.length == controller.assets.length;
+    return Column(
+      children: [
+        Row(
+          children: [
+            _VideoStat(
+              value: '${controller.totalCount}',
+              label: 'Videos',
+              highlight: false,
+            ),
+            const SizedBox(width: 10),
+            _VideoStat(
+              value: formatBytes(controller.totalVideoBytes),
+              label: 'Total size',
+              highlight: false,
+            ),
+            const SizedBox(width: 10),
+            _VideoStat(
+              value: formatBytes(controller.selectedBytes),
+              label: 'Selected',
+              highlight: true,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        VideoSortChips(controller: controller),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: controller.selectedIds.isEmpty
+                    ? AppColors.textFaint(context)
+                    : AppColors.iconAmber,
+                shape: BoxShape.circle,
               ),
             ),
-        ],
-      ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${controller.selectedIds.length} videos selected · '
+                '${formatBytes(controller.selectedBytes)}',
+                style: TextStyle(
+                  color: AppColors.textMuted(context),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            InkWell(
+              onTap: controller.assets.isEmpty
+                  ? null
+                  : controller.toggleSelectAll,
+              child: Text(
+                allSelected ? 'Clear' : 'Select all',
+                style: TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

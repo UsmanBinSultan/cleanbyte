@@ -27,7 +27,7 @@ class AiCategoriesView extends StatelessWidget {
             child: Column(
               children: [
                 SiftTopAppBar(
-                  title: 'ai_categories'.tr,
+                  title: 'Ai Categories'.tr,
                   subtitle: controller.isScanning
                       ? '${controller.scannedCount} of ${controller.totalToScan} scanned'
                       : '${controller.totalPhotos} photos · last scanned today',

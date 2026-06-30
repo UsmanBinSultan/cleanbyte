@@ -16,7 +16,8 @@ class OnboardingStatusBar extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Align(
-            alignment: Alignment.centerRight,
+            // Directional so "Skip" sits on the trailing edge in both LTR and RTL.
+            alignment: AlignmentDirectional.centerEnd,
             child: skipRoute == null
                 ? const SizedBox(width: 40, height: 28)
                 : Row(

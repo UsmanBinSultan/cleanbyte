@@ -1,4 +1,4 @@
-package com.example.sift
+package com.wixpa.cleanbyte
 
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager

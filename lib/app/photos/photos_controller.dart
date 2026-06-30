@@ -26,7 +26,7 @@ enum MediaCleanupMode {
 
   String get title {
     if (isVideos) {
-      return 'large videos'.tr;
+      return 'Large Videos'.tr;
     }
     if (isScreenshots) {
       return 'screenshots'.tr;

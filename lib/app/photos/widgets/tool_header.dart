@@ -42,7 +42,7 @@ class ToolHeader extends StatelessWidget {
           disabledForegroundColor: AppColors.textFaint(context),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
-        child: Text(allSelected ? 'clear'.tr : 'select_all'.tr),
+        child: Text(allSelected ? 'clear'.tr : 'select all'.tr),
       ),
     );
   }

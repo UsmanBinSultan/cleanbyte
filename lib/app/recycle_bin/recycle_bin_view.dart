@@ -71,7 +71,7 @@ class _Header extends StatelessWidget {
               ),
               child: Text(
                 controller.hasSelection
-                    ? (allSelected ? 'clear'.tr : 'select_all'.tr)
+                    ? (allSelected ? 'clear'.tr : 'select all'.tr)
                     : 'empty bin'.tr,
               ),
             ),

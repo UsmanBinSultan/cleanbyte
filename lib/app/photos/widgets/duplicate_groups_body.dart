@@ -19,23 +19,33 @@ class DuplicateGroupsBody extends StatelessWidget {
       color: AppColors.accent,
       backgroundColor: AppColors.surface(context),
       onRefresh: controller.loadAssets,
-      child: ListView(
+      // Lazy builder so off-screen group cards (and their thumbnail rows) are
+      // not built/decoded until scrolled into view. Index 0 is the header.
+      child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          SimilarSummaryCard(controller: controller, groups: groups),
-          const SizedBox(height: 12),
-          const AiPickNote(),
-          const SizedBox(height: 14),
-          for (var i = 0; i < groups.length; i++) ...[
-            DuplicateGroupCard(
+        itemCount: groups.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SimilarSummaryCard(controller: controller, groups: groups),
+                const SizedBox(height: 12),
+                const AiPickNote(),
+                const SizedBox(height: 14),
+              ],
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: DuplicateGroupCard(
               controller: controller,
-              group: groups[i],
-              index: i + 1,
+              group: groups[index - 1],
+              index: index,
             ),
-            const SizedBox(height: 12),
-          ],
-        ],
+          );
+        },
       ),
     );
   }

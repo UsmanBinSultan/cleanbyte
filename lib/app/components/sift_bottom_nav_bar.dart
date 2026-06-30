@@ -103,7 +103,7 @@ class SiftBottomNavBar extends StatelessWidget {
             onTap: () => _onTap(3),
           ),
           _NavItem(
-            label: 'settings'.tr,
+            label: 'Settings'.tr,
             icon: LucideIcons.settings,
             active: _normalizedActiveIndex == 4,
             onTap: () => _onTap(4),
